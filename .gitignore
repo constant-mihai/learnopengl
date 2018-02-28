@@ -1,0 +1,18 @@
+# Ignore everything
+*
+
+# Unignore directories
+!*/
+
+# Unignore files with [ch] extensions
+!*.[ChH]
+!*.cpp
+!*.CPP
+!*.vs
+!*.fs
+
+# Unignore text files
+!*.txt
+
+# Unignore Makefiles
+!Makefile
