@@ -48,7 +48,8 @@ class Program {
             glAttachShader      (id_, vertex);
             glAttachShader      (id_, fragment);
             glLinkProgram       (id_);
-            checkLinkStatus     ();
+
+            linked_ = checkLinkStatus();
         }
 
 

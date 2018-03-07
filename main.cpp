@@ -24,21 +24,12 @@ using namespace glm;
 // Includes
 #include "Shader.hpp"
 #include "Program.hpp"
+#include "Window.hpp"
 
 
 // Texture loading
 #define STB_IMAGE_IMPLEMENTATION 1
 #include <stb_image.h>
-
-/**
- * ******************************************************
- * Resize callback
- * ******************************************************
- */
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-} 
 
 /**
  * ******************************************************
@@ -291,8 +282,6 @@ int main( void )
     Shader vShader("/store/Code/cpp/learnopengl/shaders/SimpleVertexShader.vs", GL_VERTEX_SHADER); 
     Shader fShader("/store/Code/cpp/learnopengl/shaders/SimpleFragmentShader.fs", GL_FRAGMENT_SHADER); 
     Program shader(vShader.getHandler(), fShader.getHandler());
-
-    shader.setInt("ourTexture", 100);
 
 	do{
         processInput(window);
