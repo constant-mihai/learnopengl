@@ -24,9 +24,9 @@ shl_fullname := $(shl_soname).$(shl_minor_number).$(shl_release_number)
 # ---------------------------- Directories 
 SUBDIRS :=  
 CURR_DIR := $(PWD)
-include_dirs := 
-library_dirs :=  
-libraries :=  
+include_dirs := /usr/include/GLFW /store/Code/cpp/ziggurat/
+library_dirs :=  /store/Code/cpp/ziggurat 
+libraries := glfw ziggurat
 
 # ---------------------------- Compiler 
 CC := gcc

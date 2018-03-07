@@ -1,13 +1,28 @@
 ##############################################################################################
-########################################## Functions #########################################
+################## Functions, Oneliners & SoupCans*  #########################################
 ##############################################################################################
+# *Does not contain soup!
 ##############################################################################################
 
 # ---------------------------- Check subdirs for libraries ---------------------------- #
+#                                                                                       #
 # ------------------------------------------------------------------------------------- #
-f_check_subdirs_for_libs = $(if $(ifeq "" $(strip$(library_dirs))),$(compile_subdirectories),)
+f_check_subdirs_for_libs = $(if $(library_dirs),$(compile_subdirectories),)
+
+
+# ---------------------------- Compile subirs ------------------------------------------#
+#                                                                                       #
+# ------------------------------------------------------------------------------------- #
+define f_compile_subdir
+cd $(1); make; cd $(CURR_DIR); 
+endef
+
+compile_subdirectories = $(foreach dir,$(library_dirs),$(call f_compile_subdir,$(dir)))
+clean_subdirectories = $(foreach dir,$(library_dirs),$(call f_clean_subdir,$(dir)))
+
 
 # ---------------------------- User defined functions ----------------------------------#
+#                                                                                       #
 # ------------------------------------------------------------------------------------- #
 # Look into each directory from subdirs and search for *.(arg).
 # Where arg can be:
@@ -20,7 +35,42 @@ f_check_subdirs_for_libs = $(if $(ifeq "" $(strip$(library_dirs))),$(compile_sub
 #  - cpp
 #  - C
 f_deep_source_search = $(foreach dir,$(subdirs),$(wildcard $(dir)/*.$(1)))
+f_deep_includes_search = $(foreach dir,$(include_dirs),$(wildcard $(dir)/*.$(1)))
 
+# ---------------------------- Compile shared lib --------------------------------------#
+#                                                                                       #
+# ------------------------------------------------------------------------------------- #
+# Compilation command for a shared lib. One liner:
+#compile_shared_lib = $(compiler) $(shared_flags) $(objs_without_main) -o $(shl_fullname) $(LDFLAGS); ln -sf $(shl_fullname) $(shl_soname); ln -sf $(shl_fullname) $(shl_linker_name)
+# Two liner, define:
+define compile_shared_lib
+$(compiler) $(shared_flags) $(objs_without_main) -o $(shl_fullname) $(LDFLAGS)
+ln -sf $(shl_fullname) $(shl_soname)
+ln -sf $(shl_fullname) $(shl_linker_name)
+endef
+
+# ---------------------------- Compile Main --------------------------------------------#
+#                                                                                       #
+# ------------------------------------------------------------------------------------- #
+# Test if this is the root directory of the project.
+# If it is then compile this as such.
+# It it is NOT then compile this as a lib.
+compile = $(if $(findstring yes,$(main)),$(compile_main),$(compile_shared_lib))
+
+# ---------------------------- Clean functions -----------------------------------------#
+#                                                                                       #
+# ------------------------------------------------------------------------------------- #
+define f_clean
+rm -f *.o; rm -f *.so*;
+endef
+
+define f_clean_main
+$(f_clean) if [ -a $(name) ]; then rm $(name); fi;
+endef
+
+define f_clean_subdir
+cd $(1); $(f_clean) cd $(CURR_DIR);
+endef
 
 ##############################################################################################
 ########################################## Variables #########################################
@@ -28,25 +78,25 @@ f_deep_source_search = $(foreach dir,$(subdirs),$(wildcard $(dir)/*.$(1)))
 ##############################################################################################
 
 # --------------------------- GNU --------------------------- #
-#															  #
+#                                                             #
 # ----------------------------------------------------------- # 
 SHELL:= /bin/bash
 .RECIPEPREFIX := >
 
 # --------------------------- Filetypes --------------------- #
-
+#                                                             #
 # ----------------------------------------------------------- # 
 .SUFFIXES:
 .SUFFIXES: .c .C .cpp .o
 
 # --------------------------- General ----------------------- #
-
+#                                                             #
 # ----------------------------------------------------------- # 
 name := main
 main := yes 
 
 # ---------------------------- Shared library --------------- #
-
+#                                                             #
 # ----------------------------------------------------------- # 
 shl_name := $(name)
 shl_version := 1
@@ -58,14 +108,19 @@ shl_fullname := $(shl_soname).$(shl_minor_number).$(shl_release_number)
 
 
 # ---------------------------- Directories ------------------ # 
+#                                                             #
 # ----------------------------------------------------------- # 
 subdirs := 
 CURR_DIR := $(PWD)
-include_dirs := /usr/include /usr/include/GLFW /store/Code/cpp/stb/
+include_dirs := /usr/include \
+	/usr/include/GLFW \
+	/store/Code/cpp/stb/ \
+	includes
 library_dirs := common
 libraries := glfw GL GLEW loglcommon
 
 # ---------------------------- Compiler --------------------- # 
+#                                                             #
 # ----------------------------------------------------------- # 
 CC := gcc
 CXX := g++ 
@@ -73,28 +128,16 @@ compiler := g++
 # Compilation command for the main program.
 compile_main = $(compiler) $(objs) -o $(name) $(LDFLAGS)
 
-# Compilation command for a shared lib. One liner
-#compile_shared_lib = $(compiler) $(shared_flags) $(objs_without_main) -o $(shl_fullname) $(LDFLAGS); ln -sf $(shl_fullname) $(shl_soname); ln -sf $(shl_fullname) $(shl_linker_name)
-# Two liner, define:
-define compile_shared_lib
-$(compiler) $(shared_flags) $(objs_without_main) -o $(shl_fullname) $(LDFLAGS)
-ln -sf $(shl_fullname) $(shl_soname)
-ln -sf $(shl_fullname) $(shl_linker_name)
-endef
-
-# Test if this is the root directory of the project.
-# If it is then compile this as such.
-# It it is NOT then compile this as a lib.
-compile = $(if $(findstring yes,$(main)),$(compile_main),$(compile_shared_lib))
-
 # ---------------------------- Headers  --------------------- # 
+#                                                             #
 # ----------------------------------------------------------- # 
-h := $(wildcard *.h) $(call f_deep_source_search,h)
-hpp := $(wildcard *.hpp) $(call f_deep_source_search,hpp) 
-cap_h := $(wildcard *.H) $(call f_deep_source_search,H)
+h := $(wildcard *.h) $(call f_deep_includes_search,h)
+hpp := $(wildcard *.hpp) $(call f_deep_includes_search,hpp) 
+cap_h := $(wildcard *.H) $(call f_deep_includes_search,H)
 
 
 # ---------------------------- Sources ---------------------- # 
+#                                                             #
 # ----------------------------------------------------------- # 
 c_srcs := $(wildcard *.c) $(call f_deep_source_search,c)
 cpp_srcs := $(wildcard *.cpp) $(call f_deep_source_search,cpp) 
@@ -103,6 +146,7 @@ cxx_srcs := $(wildcard *.C) $(call f_deep_source_search,C)
 srcs = $(c_srcs) $(cpp_srcs) $(cxx_srcs)
 
 # ---------------------------- Objects ---------------------- # 
+#                                                             #
 # ----------------------------------------------------------- # 
 #cxx_objs := ${cxx_srcs:.C=.o}
 #cxx_objs += ${cpp_srcs:.cpp=.o}
@@ -113,11 +157,13 @@ objs_without_main := $(filter-out $(name).o,$(objs))
 
 
 # ---------------------------- Includes---------------------- # 
+#                                                             #
 # ----------------------------------------------------------- # 
 incs := $(h) $(hpp) $(cap_h)
 
 
 # ---------------------------- Flags ------------------------ # 
+#                                                             #
 # ----------------------------------------------------------- # 
 shared_flags := -shared -Wl,-soname,$(shl_soname)
 CFLAGS += -Wall -fno-diagnostics-show-caret 
@@ -137,27 +183,9 @@ LDFLAGS += $(foreach library,$(libraries),-l$(library))
 ##############################################################################################
 ##############################################################################################
 
-define f_clean
-rm -f *.o; rm -f *.so*;
-endef
-
-define f_clean_main
-$(f_clean) if [ -a $(name) ]; then rm $(name); fi;
-endef
-
-define f_compile_subdir
-cd $(1); make; cd $(CURR_DIR); 
-endef
-
-define f_clean_subdir
-cd $(1); $(f_clean) cd $(CURR_DIR);
-endef
-
-compile_subdirectories = $(foreach dir,$(library_dirs),$(call f_compile_subdir,$(dir)))
-clean_subdirectories = $(foreach dir,$(library_dirs),$(call f_clean_subdir,$(dir)))
-
 main: $(objs)
->   $(call f_check_subdirs_for_libs)
+>   @echo Making Main
+>   $(f_check_subdirs_for_libs)
 >   $(compile)
 
 $(objs): $(srcs) $(incs)
@@ -167,7 +195,8 @@ subdirs:
 all: main
 
 shared: $(objs)
->   $(call f_check_subdirs_for_libs)
+>   @echo Making Shared lib 
+>   $(f_check_subdirs_for_libs)
 >   $(compile_shared_lib)
 
 print-%: ; @echo $* = $($*)

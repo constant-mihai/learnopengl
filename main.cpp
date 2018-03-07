@@ -14,10 +14,17 @@ using namespace glm;
 #define WINDOW_WIDTH 1024 
 #define WINDOW_HEIGHT 768 
 
-// Shaders
+// Includes
+#include <Utils.hpp>
+
+// Common 
 #include "common/shader.hpp"
 #include "common/debug.hpp"
-#include "common/Shader.hpp"
+
+// Includes
+#include "Shader.hpp"
+#include "Program.hpp"
+
 
 // Texture loading
 #define STB_IMAGE_IMPLEMENTATION 1
@@ -40,6 +47,10 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
  */
 int openWindow() {
 	// Initialise GLFW
+    //
+
+    std::string str = "machine";
+
 	if( !glfwInit() )
 	{
 		fprintf( stderr, "Failed to initialize GLFW\n" );
@@ -277,12 +288,11 @@ int main( void )
     createBuffer(&VAO, &VBO, &EBO);
     createTextures();
 
-    //GLuint shaderProgram = LoadShaders(
-            //"/store/Code/cpp/ogl/SimpleVertexShader.vs",
-            //"/store/Code/cpp/ogl/SimpleFragmentShader.fs" );
+    Shader vShader("/store/Code/cpp/learnopengl/shaders/SimpleVertexShader.vs", GL_VERTEX_SHADER); 
+    Shader fShader("/store/Code/cpp/learnopengl/shaders/SimpleFragmentShader.fs", GL_FRAGMENT_SHADER); 
+    Program shader(vShader.getHandler(), fShader.getHandler());
 
-    Shader shader("/store/Code/cpp/learnopengl/shaders/SimpleVertexShader.vs", "/store/Code/cpp/learnopengl/shaders/SimpleFragmentShader.fs");
-    
+    shader.setInt("ourTexture", 100);
 
 	do{
         processInput(window);
