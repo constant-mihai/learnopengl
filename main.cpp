@@ -1,14 +1,15 @@
 // std
+#include <unistd.h>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory>
 
-#include <GL/glew.h>
+#include <glew.h>
 
 #include <glfw3.h>
-GLFWwindow* window;
 
-#include <glm/glm.hpp>
+#include <glm.hpp>
 using namespace glm;
 
 #define WINDOW_WIDTH 1024 
@@ -25,130 +26,41 @@ using namespace glm;
 #include "Shader.hpp"
 #include "Program.hpp"
 #include "Window.hpp"
+#include "Textures.hpp"
+#include "Buffers.hpp"
 
-
-// Texture loading
-#define STB_IMAGE_IMPLEMENTATION 1
-#include <stb_image.h>
 
 /**
  * ******************************************************
- * Open Window
+ * Initialize GLFW and GLEW
+ *
+ * @param[out] window
+ *
+ * @return 0 if successfull
  * ******************************************************
- */
-int openWindow() {
-	// Initialise GLFW
-    //
+**/
+int init(std::unique_ptr<Window> &window) {
+    /* Initialize GLFW */
+    if( !glfwInit() )
+    {
+        LOG(L_ERR, "Failed to initialize GLFW\n" );
+        return -1;
+    }
 
-    std::string str = "machine";
-
-	if( !glfwInit() )
-	{
-		fprintf( stderr, "Failed to initialize GLFW\n" );
-		getchar();
-		return -1;
-	}
-
-	glfwWindowHint(GLFW_SAMPLES, 4);
-	glfwWindowHint(GLFW_RESIZABLE,GL_FALSE);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-
-	// Open a window and create its OpenGL context
-	window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Playground", NULL, NULL);
-	if( window == NULL ){
-		fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
-		getchar();
-		glfwTerminate();
-		return -1;
-	}
-	glfwMakeContextCurrent(window);
-    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    window.reset(new Window());
 
     glewExperimental=true;
 
-	// Initialize GLEW
-	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to initialize GLEW\n");
-		getchar();
-		glfwTerminate();
-		return -1;
-	}
-
-    GLint flags; 
-    glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-    if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+    /* Initialize GLEW */
+    if (glewInit() != GLEW_OK) 
     {
-        printf("Flags :%x\n", flags);
-        printf("Debug initialized\n");
-
-		glEnable(GL_DEBUG_OUTPUT);
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
-		glDebugMessageCallback(glDebugOutput, 0);
-		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-
-		// debug filtering
-		//glDebugMessageControl(GL_DEBUG_SOURCE_API, 
-		//					  GL_DEBUG_TYPE_ERROR, 
-		//					  GL_DEBUG_SEVERITY_HIGH,
-		//					  0, nullptr, GL_TRUE);
+        LOG(L_ERR, "Failed to initialize GLEW\n");
+        glfwTerminate();
+        return -1;
     }
-
-	// Ensure we can capture the escape key being pressed below
-	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
     return 0;
 }
-
-/**
- * ******************************************************
- * Create Textures
- * ******************************************************
- */
-void createTextures() {
-
-    // Set texture wraping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-
-    // Set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // Generate textures
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    // Load file
-    int width, height, nrChannels;
-    static const char * textureImageLoc = "/store/Code/cpp/learnopengl/img/textures/container.jpg";
-    unsigned char *data = stbi_load(textureImageLoc, &width, &height, &nrChannels, 0);
-    if (data) {
-        glTexImage2D(
-                GL_TEXTURE_2D,      // Texture target
-                0,                  // Mipmap level. Level of detail.
-                GL_RGB,             // Internal format. Number of color components
-                width,              // Width of teture image
-                height,             // Height of texture image
-                0,                  // Legacy. Must be 0.
-                GL_RGB,             // Format of pixel data
-                GL_UNSIGNED_BYTE,   // Data type of pixel data
-                data);              // Pointer to binary image
-        glGenerateMipmap(GL_TEXTURE_2D);
-    } else {
-        fprintf(stderr, "Could not open texture: %s!", textureImageLoc);
-    }
-
-    //glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
-
-    stbi_image_free(data);
-}
-
 
 /**
  * ******************************************************
@@ -172,18 +84,19 @@ void createBuffer(GLuint * VAO, GLuint * VBO, GLuint * EBO) {
 
     // Create VAO, VBO, EBO
     glGenVertexArrays       (1, VAO);
-	glGenBuffers            (1, VBO);
-	glGenBuffers            (1, EBO);
+    //glGenBuffers            (1, VBO);
+    glGenBuffers            (1, EBO);
 
     glBindVertexArray       (*VAO);
 
     // Bind VBO
-	glBindBuffer            (GL_ARRAY_BUFFER, *VBO);
-	glBufferData            (GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW); 
+    //glBindBuffer            (GL_ARRAY_BUFFER, *VBO);
+    //glBufferData            (GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW); 
+    Buffer<float> vbo(GL_ARRAY_BUFFER, GL_STATIC_DRAW, g_vertex_buffer_data, sizeof(g_vertex_buffer_data));
 
     // Bind EBO 
     glBindBuffer            (GL_ELEMENT_ARRAY_BUFFER, *EBO);
-	glBufferData            (GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
+    glBufferData            (GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
 
     glVertexAttribPointer(
        0,                  // attribute 0.
@@ -222,20 +135,6 @@ void createBuffer(GLuint * VAO, GLuint * VBO, GLuint * EBO) {
     glBindVertexArray(0);
 }
 
-
-/**
- * ******************************************************
- * Process Input
- * ******************************************************
- */
-void processInput(GLFWwindow *window)
-{
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-}
-
-
-
 /**
  * ******************************************************
  * Change color with time 
@@ -258,56 +157,69 @@ void changeColor(GLuint shaderProgram) {
 int main( void )
 {
     // Open window
-    if (openWindow() != 0) {
-        fprintf(stderr, "Could not open window!");
+    std::unique_ptr<Window> uptrWindow;
+    if (init(uptrWindow) != 0)
+    {
+        LOG(L_ERR, "Could not open window!\n");
+        exit(1);
     }
+
+    /* Enable OpenGL debug */
+    loglEnableDebug();
 
     int nrAttributes;
     /* Max vertex attributes */
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
-    printf("Maximum nr of vertex attributes supported: %d\n", nrAttributes );
+    LOG(L_INFO, "Maximum nr of vertex attributes supported: %d\n", nrAttributes );
 
     // Enable Debug
     //glEnable                    (GL_DEBUG_OUTPUT);
     //glDebugMessageCallback      ((GLDEBUGPROC) MessageCallback, 0);
 
-	// Dark blue background
-	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+    /* Dark blue background */
+    glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
-	// This will identify our vertex buffer
-	GLuint VBO, VAO, EBO;
+    /* This will identify our vertex buffer */
+    GLuint VBO, VAO, EBO;
     createBuffer(&VAO, &VBO, &EBO);
-    createTextures();
+
+    Texture crate("/store/Code/cpp/learnopengl/img/textures/container.jpg");
 
     Shader vShader("/store/Code/cpp/learnopengl/shaders/SimpleVertexShader.vs", GL_VERTEX_SHADER); 
     Shader fShader("/store/Code/cpp/learnopengl/shaders/SimpleFragmentShader.fs", GL_FRAGMENT_SHADER); 
-    Program shader(vShader.getHandler(), fShader.getHandler());
+    Program program(vShader.getHandler(), fShader.getHandler());
 
-	do{
-        processInput(window);
-		glClear(GL_COLOR_BUFFER_BIT);
+    /* While window is open */
+    while(!uptrWindow.get()->shouldClose())
+    {
+        /* Clear */
+        glClear(GL_COLOR_BUFFER_BIT);
 
         //glBindBuffer(GL_ARRAY_BUFFER, VBO);
         // Draw the triangle !
-        //changeColor(shaderProgram);
-        //glUseProgram(shaderProgram);
-        shader.use();
-        shader.setFloat("ourColor", (sin(glfwGetTime())/2.0f) + 0.5f);
+        //changeColor(programProgram);
+        //glUseProgram(programProgram);
+
+        /* Run GLSL program */
+        program.use();
+        program.setFloat("ourColor", (sin(glfwGetTime())/2.0f) + 0.5f);
+
+        /* Bind and draw*/
         glBindVertexArray(VAO);   
         //glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
         //glDisableVertexAttribArray(0);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-		// Swap buffers
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+        /* Swap buffers */
+        uptrWindow.get()->swapBuffers();
 
-	} while( // Check if the ESC key was pressed or the window was closed
-		    glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
-		    glfwWindowShouldClose(window) == 0 );
+        /* Poll for events */
+        glfwPollEvents();
+    } 
 
-	// Close OpenGL window and terminate GLFW
-	glfwTerminate();
+    /* Close OpenGL window and terminate GLFW */
+    uptrWindow.reset(NULL);
+    glfwTerminate();
 
-	return 0;
+    return 0;
 }

@@ -112,7 +112,8 @@ shl_fullname := $(shl_soname).$(shl_minor_number).$(shl_release_number)
 # ----------------------------------------------------------- # 
 subdirs := 
 CURR_DIR := $(PWD)
-include_dirs := /usr/include \
+include_dirs := /usr/include/GL \
+	/usr/include/glm \
 	/usr/include/GLFW \
 	/store/Code/cpp/stb/ \
 	includes

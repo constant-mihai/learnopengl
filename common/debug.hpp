@@ -11,12 +11,14 @@ void MessageCallback( GLenum source,
                       const GLchar* message,
                       const void* userParam );
 
-void glDebugOutput(   GLenum source, 
+void loglDebugOutput(   GLenum source, 
                             GLenum type, 
                             GLuint id, 
                             GLenum severity, 
                             GLsizei length, 
                             const GLchar *message, 
                             const void *userParam);
+
+void loglEnableDebug();
 
 #endif

@@ -38,7 +38,7 @@ void MessageCallback( GLenum source,
                                      type, severity, message );
 } 
 
-void glDebugOutput(GLenum source, 
+void loglDebugOutput(GLenum source, 
                             GLenum type, 
                             GLuint id, 
                             GLenum severity, 
@@ -83,4 +83,26 @@ void glDebugOutput(GLenum source,
         case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
     } std::cout << std::endl;
     std::cout << std::endl;
+}
+
+
+void loglEnableDebug() {
+    GLint flags; 
+    glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+    if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+    {
+        printf("Flags :%x\n", flags);
+        printf("Debug initialized\n");
+
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
+		glDebugMessageCallback(loglDebugOutput, 0);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+
+		// debug filtering
+		//glDebugMessageControl(GL_DEBUG_SOURCE_API, 
+		//					  GL_DEBUG_TYPE_ERROR, 
+		//					  GL_DEBUG_SEVERITY_HIGH,
+		//					  0, nullptr, GL_TRUE);
+    }
 }

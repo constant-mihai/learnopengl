@@ -1,5 +1,6 @@
 // Include GLFW
 #include <glfw3.h>
+#if 0
 extern GLFWwindow* window; // The "extern" keyword here is to access the variable "window" declared in tutorialXXX.cpp. This is a hack to keep the tutorials simple. Please avoid this.
 
 // Include GLM
@@ -102,3 +103,4 @@ void computeMatricesFromInputs(){
 	// For the next frame, the "last time" will be "now"
 	lastTime = currentTime;
 }
+#endif
