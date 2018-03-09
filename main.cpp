@@ -69,7 +69,7 @@ int init(std::unique_ptr<Window> &window) {
  */
 void createBuffer(GLuint * VAO, GLuint * VBO, GLuint * EBO) {
     // An array of 3 vectors which represents 3 vertices
-    static const GLfloat g_vertex_buffer_data[] = {
+    static const GLfloat vertices[] = {
          // Positions       // Colors              // Texture coords
          0.5f,  0.5f, 0.0f, /**/ 1.0f, 0.0f, 0.0f, /**/ 1.0f, 1.0f, // top right
          0.5f, -0.5f, 0.0f, /**/ 0.0f, 0.0f, 0.0f, /**/ 1.0f, 0.0f, // bottom right
@@ -77,26 +77,22 @@ void createBuffer(GLuint * VAO, GLuint * VBO, GLuint * EBO) {
         -0.5f,  0.5f, 0.0f, /**/ 0.0f, 0.0f, 1.0f, /**/ 0.0f, 1.0f, // top left 
     };
 
-    static const unsigned int indices[] = {  // note that we start from 0!
+    static const uint32_t indices[] = {  // note that we start from 0!
         0, 1, 3,  // first Triangle
         1, 2, 3   // second Triangle
     };
 
-    // Create VAO, VBO, EBO
+    /* Create VAO */
     glGenVertexArrays       (1, VAO);
-    //glGenBuffers            (1, VBO);
-    glGenBuffers            (1, EBO);
-
     glBindVertexArray       (*VAO);
 
-    // Bind VBO
-    //glBindBuffer            (GL_ARRAY_BUFFER, *VBO);
-    //glBufferData            (GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW); 
-    Buffer<float> vbo(GL_ARRAY_BUFFER, GL_STATIC_DRAW, g_vertex_buffer_data, sizeof(g_vertex_buffer_data));
+    /* Bind VBO */
+    Buffer<float> vbo(GL_ARRAY_BUFFER, GL_STATIC_DRAW, vertices, sizeof(vertices));
+    vbo.hexDump();
 
-    // Bind EBO 
-    glBindBuffer            (GL_ELEMENT_ARRAY_BUFFER, *EBO);
-    glBufferData            (GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
+    /* Bind EBO */
+    Buffer<uint32_t> ebo(GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, indices, sizeof(indices));
+    ebo.hexDump();
 
     glVertexAttribPointer(
        0,                  // attribute 0.
