@@ -67,7 +67,7 @@ int init(std::unique_ptr<Window> &window) {
  * Create Buffer 
  * ******************************************************
  */
-void createBuffer(GLuint * VAO, GLuint * VBO, GLuint * EBO) {
+void createBuffer(VertexArray &vertexArray) {
     // An array of 3 vectors which represents 3 vertices
     static const GLfloat vertices[] = {
          // Positions       // Colors              // Texture coords
@@ -82,10 +82,6 @@ void createBuffer(GLuint * VAO, GLuint * VBO, GLuint * EBO) {
         1, 2, 3   // second Triangle
     };
 
-    /* Create VAO */
-    glGenVertexArrays       (1, VAO);
-    glBindVertexArray       (*VAO);
-
     /* Bind VBO */
     Buffer<float> vbo(GL_ARRAY_BUFFER, GL_STATIC_DRAW, vertices, sizeof(vertices));
     vbo.hexDump();
@@ -94,40 +90,14 @@ void createBuffer(GLuint * VAO, GLuint * VBO, GLuint * EBO) {
     Buffer<uint32_t> ebo(GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, indices, sizeof(indices));
     ebo.hexDump();
 
-    glVertexAttribPointer(
-       0,                  // attribute 0.
-       3,                  // size
-       GL_FLOAT,           // type
-       GL_FALSE,           // normalized?
-       8* sizeof(float),   // stride
-       (void*)0            // array buffer offset
-    );
-
-    glVertexAttribPointer(
-       1,
-       3,
-       GL_FLOAT,
-       GL_FALSE,
-       8*sizeof(float),
-       (void*)(3*sizeof(float))
-    );
-
-    glVertexAttribPointer(
-       2,
-       2,
-       GL_FLOAT,
-       GL_FALSE,
-       8* sizeof(float),
-       (void*)(6*sizeof(float))
-    );
-
-    // 1rst attribute buffer : vertices
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
+    /* Formating attributes */
+    vertexArray.attribPointer(3, 8* sizeof(float), 0);
+    vertexArray.attribPointer(3, 8* sizeof(float), 3* sizeof(float));
+    vertexArray.attribPointer(2, 8* sizeof(float), 6* sizeof(float));
+    vertexArray.enableAllAttribArrays();
+    vertexArray.print();
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
     glBindVertexArray(0);
 }
 
@@ -175,9 +145,11 @@ int main( void )
     /* Dark blue background */
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
+    /* Create VAO */
+    VertexArray vertexArray;
+
     /* This will identify our vertex buffer */
-    GLuint VBO, VAO, EBO;
-    createBuffer(&VAO, &VBO, &EBO);
+    createBuffer(vertexArray);
 
     Texture crate("/store/Code/cpp/learnopengl/img/textures/container.jpg");
 
@@ -201,7 +173,7 @@ int main( void )
         program.setFloat("ourColor", (sin(glfwGetTime())/2.0f) + 0.5f);
 
         /* Bind and draw*/
-        glBindVertexArray(VAO);   
+        glBindVertexArray(vertexArray.getHandler());   
         //glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
         //glDisableVertexAttribArray(0);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
