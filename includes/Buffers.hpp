@@ -118,7 +118,7 @@ class Buffer{
         uint32_t            handler_;   /* Buffer handler */
         size_t              size_;      /* Buffer size */
         uint8_t             hexDumpMask_;
-        std::unique_ptr<T>  uptrData_;  /* Data to be drawn */
+        std::unique_ptr<T>  uptrData_;  /* Data to be drawn */ // TODO is this data copied by OpenGL? should I free it?
 };
 
 

@@ -103,26 +103,12 @@ void createBuffer(VertexArray &vertexArray) {
 
 /**
  * ******************************************************
- * Change color with time 
- * ******************************************************
- */
-void changeColor(GLuint shaderProgram) {
-    float   timeValue               = glfwGetTime();
-    float   greenValue              = (sin(timeValue) / 2.0f) + 0.5f;
-    int     vertexColorLocation     = glGetUniformLocation(shaderProgram, "ourColor");
-
-    glUseProgram    (shaderProgram);
-    glUniform4f     (vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-}
-
-/**
- * ******************************************************
  * Main
  * ******************************************************
  */
 int main( void )
 {
-    // Open window
+    /* Open window */
     std::unique_ptr<Window> uptrWindow;
     if (init(uptrWindow) != 0)
     {
@@ -133,14 +119,10 @@ int main( void )
     /* Enable OpenGL debug */
     loglEnableDebug();
 
-    int nrAttributes;
     /* Max vertex attributes */
+    int nrAttributes;
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
     LOG(L_INFO, "Maximum nr of vertex attributes supported: %d\n", nrAttributes );
-
-    // Enable Debug
-    //glEnable                    (GL_DEBUG_OUTPUT);
-    //glDebugMessageCallback      ((GLDEBUGPROC) MessageCallback, 0);
 
     /* Dark blue background */
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
@@ -151,8 +133,10 @@ int main( void )
     /* This will identify our vertex buffer */
     createBuffer(vertexArray);
 
+    /* Load texture */
     Texture crate("/store/Code/cpp/learnopengl/img/textures/container.jpg");
 
+    /* Compile shaders and link program */
     Shader vShader("/store/Code/cpp/learnopengl/shaders/SimpleVertexShader.vs", GL_VERTEX_SHADER); 
     Shader fShader("/store/Code/cpp/learnopengl/shaders/SimpleFragmentShader.fs", GL_FRAGMENT_SHADER); 
     Program program(vShader.getHandler(), fShader.getHandler());
@@ -163,19 +147,12 @@ int main( void )
         /* Clear */
         glClear(GL_COLOR_BUFFER_BIT);
 
-        //glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        // Draw the triangle !
-        //changeColor(programProgram);
-        //glUseProgram(programProgram);
-
         /* Run GLSL program */
         program.use();
         program.setFloat("ourColor", (sin(glfwGetTime())/2.0f) + 0.5f);
 
         /* Bind and draw*/
         glBindVertexArray(vertexArray.getHandler());   
-        //glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
-        //glDisableVertexAttribArray(0);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         /* Swap buffers */
