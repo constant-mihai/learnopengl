@@ -101,6 +101,23 @@ class Program {
 
         /**
          * ******************************************************
+         * Set a float matrix in the program
+         *
+         * @param name      - uniform name
+         * @param value     - value to set
+         * ******************************************************
+        **/
+        void setMat4f(const char* name, float *value) const
+        { 
+            glUniformMatrix4fv(
+                    glGetUniformLocation(id_, name), 
+                    1           /* Number of Matrices to send */, 
+                    GL_FALSE    /* Whether to transpose matrix */, 
+                    value); 
+        }
+
+        /**
+         * ******************************************************
          * Check if the program linked successfully
          * ******************************************************
         **/
@@ -123,6 +140,13 @@ class Program {
             }
             return true;
         }
+
+        /**
+         * ******************************************************
+         * @brief id getter
+         * ******************************************************
+        **/
+        uint32_t getId() { return id_; };
 
 
     private:

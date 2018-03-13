@@ -202,6 +202,7 @@ class VertexArray {
         {
             glGenVertexArrays(1 /* Numbers of Vertex arrays */, &handler_);
             glBindVertexArray(handler_);
+            attrPtrs_.reserve(16 /* 16 attributes */);
         }
 
         /**

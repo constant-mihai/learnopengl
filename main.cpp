@@ -5,24 +5,30 @@
 #include <stdlib.h>
 #include <memory>
 
+/* GLEW */
 #include <glew.h>
 
+/* GLFW */
 #include <glfw3.h>
 
+/* GLM */
 #include <glm.hpp>
 using namespace glm;
+#include <vec3.hpp>
+#include <vec4.hpp>
+#include <mat4x4.hpp>
+#include <trigonometric.hpp>
+#include <gtc/matrix_transform.hpp>
 
 #define WINDOW_WIDTH 1024 
 #define WINDOW_HEIGHT 768 
-
-// Includes
-#include <Utils.hpp>
 
 // Common 
 #include "common/shader.hpp"
 #include "common/debug.hpp"
 
 // Includes
+#include <Utils.hpp>
 #include "Shader.hpp"
 #include "Program.hpp"
 #include "Window.hpp"
@@ -103,6 +109,20 @@ void createBuffer(VertexArray &vertexArray) {
 
 /**
  * ******************************************************
+ * Matrix example
+ * ******************************************************
+**/
+void matrixExample()
+{
+    vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
+    mat4 trans = translate(mat4(1.0f), vec3(1.0f, 1.0f, 0.0f));
+    vec = trans * vec;
+
+    LOG(L_ERR, "Vector = [%lf %lf %lf]", vec.x, vec.y, vec.z);
+}
+
+/**
+ * ******************************************************
  * Main
  * ******************************************************
  */
@@ -116,6 +136,7 @@ int main( void )
         exit(1);
     }
 
+    matrixExample();
     /* Enable OpenGL debug */
     loglEnableDebug();
 
@@ -133,13 +154,25 @@ int main( void )
     /* This will identify our vertex buffer */
     createBuffer(vertexArray);
 
-    /* Load texture */
-    Texture crate("/store/Code/cpp/learnopengl/img/textures/container.jpg");
-
     /* Compile shaders and link program */
     Shader vShader("/store/Code/cpp/learnopengl/shaders/SimpleVertexShader.vs", GL_VERTEX_SHADER); 
     Shader fShader("/store/Code/cpp/learnopengl/shaders/SimpleFragmentShader.fs", GL_FRAGMENT_SHADER); 
     Program program(vShader.getHandler(), fShader.getHandler());
+    program.use();
+    glm::mat4 trans(1.0f);
+    trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
+    trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5)); 
+    program.setMat4f("transform", &trans[0][0]);
+
+    /* Load texture */
+    Texture crate("/store/Code/cpp/learnopengl/img/textures/container.png", GL_RGB, 0);
+    Texture smile("/store/Code/cpp/learnopengl/img/textures/awesomeface.png", GL_RGBA, 1);
+
+    /* We need to tell GLSL which texture is where */
+    uint32_t texLoc = glGetUniformLocation(program.getId(), "ourTexture1");
+    glUniform1i(texLoc, 0);
+    /* Or like this */
+    program.setInt("ourTexture2", 1);
 
     /* While window is open */
     while(!uptrWindow.get()->shouldClose())
