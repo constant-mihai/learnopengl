@@ -1,9 +1,10 @@
-// std
+/* std */
 #include <unistd.h>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory>
+#include <math.h>
 
 /* GLEW */
 #include <glew.h>
@@ -13,27 +14,29 @@
 
 /* GLM */
 #include <glm.hpp>
-using namespace glm;
 #include <vec3.hpp>
 #include <vec4.hpp>
 #include <mat4x4.hpp>
 #include <trigonometric.hpp>
 #include <gtc/matrix_transform.hpp>
+#include <gtc/quaternion.hpp>
+#include <gtx/quaternion.hpp>
 
 #define WINDOW_WIDTH 1024 
 #define WINDOW_HEIGHT 768 
 
-// Common 
+/* Common */
 #include "common/shader.hpp"
 #include "common/debug.hpp"
 
-// Includes
+/* Includes */
 #include <Utils.hpp>
 #include "Shader.hpp"
 #include "Program.hpp"
 #include "Window.hpp"
 #include "Textures.hpp"
 #include "Buffers.hpp"
+#include "Transform.hpp"
 
 
 /**
@@ -109,20 +112,6 @@ void createBuffer(VertexArray &vertexArray) {
 
 /**
  * ******************************************************
- * Matrix example
- * ******************************************************
-**/
-void matrixExample()
-{
-    vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
-    mat4 trans = translate(mat4(1.0f), vec3(1.0f, 1.0f, 0.0f));
-    vec = trans * vec;
-
-    LOG(L_ERR, "Vector = [%lf %lf %lf]", vec.x, vec.y, vec.z);
-}
-
-/**
- * ******************************************************
  * Main
  * ******************************************************
  */
@@ -136,7 +125,6 @@ int main( void )
         exit(1);
     }
 
-    matrixExample();
     /* Enable OpenGL debug */
     loglEnableDebug();
 
@@ -159,10 +147,13 @@ int main( void )
     Shader fShader("/store/Code/cpp/learnopengl/shaders/SimpleFragmentShader.fs", GL_FRAGMENT_SHADER); 
     Program program(vShader.getHandler(), fShader.getHandler());
     program.use();
-    glm::mat4 trans(1.0f);
-    trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
-    trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5)); 
-    program.setMat4f("transform", &trans[0][0]);
+
+    /* Transform */
+    Transform transform(0, 1, glm::vec3(0, 0, 0));
+    transform.set(0, 1, glm::vec3(0,0,90));
+    program.setMat4f("transform", transform.getModelFloat());
+    transform.remodel();
+    program.setMat4f("transform", transform.getModelFloat());
 
     /* Load texture */
     Texture crate("/store/Code/cpp/learnopengl/img/textures/container.png", GL_RGB, 0);
