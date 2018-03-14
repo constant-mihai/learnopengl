@@ -78,13 +78,28 @@ class Transform {
     private: /* Methods */
     public: /* Methods */
 
+        Transform& operator=(const Transform& rhs)
+        {
+            if (&rhs != this)
+            {
+                model_ = *(rhs.getModel());
+            }
+
+            return *this;
+        }
+
+        glm::mat4 operator*(const Transform& rhs)
+        {
+            return (model_ * *(rhs.getModel()));
+        }
+
         /**
          * ******************************************************
          * @brief model getter
          * ******************************************************
         **/
-        glm::mat4 * getModel() { return &model_; };
-        float * getModelFloat() { return &model_[0][0]; };
+        const glm::mat4 * getModel() const { return &model_; };
+        const float * getModelFloat() const { return &model_[0][0]; };
 
         /**
          * ******************************************************
@@ -124,6 +139,19 @@ class Transform {
             MatOps op = translate_ * rotate_ * scale_;
             model_ *= op.getMatRef();
         }
+
+        void retranslate() 
+        {
+            model_ *= translate_.getMatRef(); 
+        };
+        void rescale() 
+        {
+            model_ *= scale_.getMatRef(); 
+        };
+        void rerotate() 
+        {
+            model_ *= rotate_.getMatRef();
+        };
 
         /**
          * ******************************************************
@@ -194,6 +222,15 @@ class Transform {
 
                 MatOps(glm::mat4 mat) { mat_ = mat; };
 
+                MatOps& operator=(const MatOps & rhs)
+                {
+                    if (&rhs != this)
+                    {
+                        mat_ = rhs.getMatRef();
+                    }
+                    return *this;
+                }
+
                 MatOps operator*(const MatOps & rhs)
                 {
                     const glm::mat4 & rhs_mat = rhs.getMatRef();
@@ -217,7 +254,16 @@ class Transform {
                 Translate(float pos): MatOps(1.0f), vec_(pos, pos, pos) { translate(mat_, vec_); };
                 Translate(glm::vec3 vec): MatOps(1.0f), vec_(vec) { translate(mat_, vec_); };
 
-                glm::vec3 * getVec() { return &vec_; };
+                const glm::vec3 * getVec() const { return &vec_; };
+
+                Translate& operator=(const Translate& rhs)
+                {
+                    if (&rhs != this)
+                    {
+                        setVec(*(rhs.getVec()));
+                    }
+                    return *this;
+                }
 
                 void setVec(glm::vec3 vec) 
                 { 
@@ -240,7 +286,16 @@ class Transform {
                 Scale(float pos): MatOps(1.0f), vec_(pos, pos, pos) { scale(mat_, vec_); };
                 Scale(glm::vec3 vec): MatOps(1.0f), vec_(vec) { scale(mat_, vec_); };
 
-                glm::vec3 * getVec() { return &vec_; };
+                const glm::vec3 * getVec() const { return &vec_; };
+
+                Scale& operator=(const Scale& rhs)
+                {
+                    if (&rhs != this)
+                    {
+                        setVec(*(rhs.getVec()));
+                    }
+                    return *this;
+                }
 
                 void setVec(glm::vec3 vec) 
                 { 
@@ -262,7 +317,16 @@ class Transform {
                 Rotate(): MatOps(1.0f), vec_(0, 0, 0) {};
                 Rotate(glm::vec3 vec): MatOps(1.0f), vec_(vec) { rotQuat(mat_, vec_); };
 
-                glm::vec3 * getVec() { return &vec_; };
+                const glm::vec3 * getVec() const { return &vec_; };
+
+                Rotate& operator=(const Rotate& rhs)
+                {
+                    if (&rhs != this)
+                    {
+                        setVec(*(rhs.getVec()));
+                    }
+                    return *this;
+                }
 
                 void setVec(glm::vec3 vec) 
                 { 

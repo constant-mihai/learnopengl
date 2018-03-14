@@ -11,7 +11,7 @@ out vec3 vsCol;
 out vec2 vsTex;
 
 void main(){
-    gl_Position = transform * vec4(aPos, 1.0f);
+    gl_Position = (transform * vec4(aPos, 1.0f));
     vsCol = aCol;
     vsTex = aTex;
 }

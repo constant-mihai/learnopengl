@@ -149,11 +149,10 @@ int main( void )
     program.use();
 
     /* Transform */
-    Transform transform(0, 1, glm::vec3(0, 0, 0));
-    transform.set(0, 1, glm::vec3(0,0,90));
-    program.setMat4f("transform", transform.getModelFloat());
-    transform.remodel();
-    program.setMat4f("transform", transform.getModelFloat());
+    Transform transform(0, 0.1f, glm::vec3(0, 0, 5));
+    Transform t_orbit(0.01f, 1.0f, glm::vec3(0, 0, 5));
+    program.setMat4f("transform", (float*)transform.getModelFloat());
+    //program.setMat4f("transform_orbit", t_orbit.getModelFloat());
 
     /* Load texture */
     Texture crate("/store/Code/cpp/learnopengl/img/textures/container.png", GL_RGB, 0);
@@ -165,15 +164,29 @@ int main( void )
     /* Or like this */
     program.setInt("ourTexture2", 1);
 
+    double time = 0, rotateTime = glfwGetTime();
+
     /* While window is open */
     while(!uptrWindow.get()->shouldClose())
     {
+        /* Time */
+        time = glfwGetTime();
+
         /* Clear */
         glClear(GL_COLOR_BUFFER_BIT);
 
         /* Run GLSL program */
         program.use();
-        program.setFloat("ourColor", (sin(glfwGetTime())/2.0f) + 0.5f);
+        program.setFloat("ourColor", (sin(time)/2.0f) + 0.5f);
+
+        if ( time - rotateTime > 0.05f ) 
+        {
+            transform.rerotate();
+            t_orbit.retranslate();
+            program.setMat4f("transform", &(t_orbit * transform)[0][0]); 
+
+            rotateTime = glfwGetTime();
+        }
 
         /* Bind and draw*/
         glBindVertexArray(vertexArray.getHandler());   
