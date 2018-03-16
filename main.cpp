@@ -149,9 +149,10 @@ int main( void )
     program.use();
 
     /* Transform */
-    Transform transform(0, 0.1f, glm::vec3(0, 0, 5));
-    Transform t_orbit(0.01f, 1.0f, glm::vec3(0, 0, 5));
-    program.setMat4f("transform", (float*)transform.getModelFloat());
+    Transform spin(0, 0.1f, glm::vec3(0, 0, 35));
+    Transform trns( glm::vec3(0.25f, 0, 0), glm::vec3(1, 1, 1), glm::vec3(0, 0, 0));
+    Transform orbit(0, 1, glm::vec3(0, 0, 5));
+    program.setMat4f("transform", (float*)spin.getModelFloat());
     //program.setMat4f("transform_orbit", t_orbit.getModelFloat());
 
     /* Load texture */
@@ -165,6 +166,7 @@ int main( void )
     program.setInt("ourTexture2", 1);
 
     double time = 0, rotateTime = glfwGetTime();
+    glm::mat4 res(1.0f);
 
     /* While window is open */
     while(!uptrWindow.get()->shouldClose())
@@ -181,9 +183,11 @@ int main( void )
 
         if ( time - rotateTime > 0.05f ) 
         {
-            transform.rerotate();
-            t_orbit.retranslate();
-            program.setMat4f("transform", &(t_orbit * transform)[0][0]); 
+            spin.rerotate();
+            res = trns * spin;
+            orbit.rerotate();
+            res = orbit * res;
+            program.setMat4f("transform", &res[0][0]); 
 
             rotateTime = glfwGetTime();
         }
