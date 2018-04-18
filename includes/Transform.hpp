@@ -268,6 +268,7 @@ class Transform {
          * ******************************************************
         **/
         const glm::mat4 * getModel() const { return &model_; };
+        const glm::mat4 & getModelRef() const { return model_; };
         const float * getModelFloat() const { return &model_[0][0]; };
         const Translate & getTranslate() const { return translate_; };
         const Scale & getScale() const { return scale_; };

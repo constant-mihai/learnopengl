@@ -24,6 +24,7 @@
 
 #define WINDOW_WIDTH 1024 
 #define WINDOW_HEIGHT 768 
+#define ASPECT_RATIO WINDOW_WIDTH/WINDOW_HEIGHT
 
 /* Common */
 #include "common/shader.hpp"
@@ -37,6 +38,7 @@
 #include "Textures.hpp"
 #include "Buffers.hpp"
 #include "Transform.hpp"
+#include "Camera.hpp"
 
 
 /**
@@ -110,6 +112,13 @@ void createBuffer(VertexArray &vertexArray) {
     glBindVertexArray(0);
 }
 
+void spin() {
+    //Transform spin(0, 0.1f, glm::vec3(0, 0, 35));
+    //Transform trns( glm::vec3(0.25f, 0, 0), glm::vec3(1, 1, 1), glm::vec3(0, 0, 0));
+    //Transform orbit(0, 1, glm::vec3(0, 0, 5));
+    //program.setMat4f("transform", (float*)spin.getModelFloat());
+}
+
 /**
  * ******************************************************
  * Main
@@ -148,12 +157,18 @@ int main( void )
     Program program(vShader.getHandler(), fShader.getHandler());
     program.use();
 
+    Camera camera(glm::vec3(0, 0, 1.0f), 70.0f, ASPECT_RATIO, 0.01f, 1000.0f);
+
     /* Transform */
-    Transform spin(0, 0.1f, glm::vec3(0, 0, 35));
-    Transform trns( glm::vec3(0.25f, 0, 0), glm::vec3(1, 1, 1), glm::vec3(0, 0, 0));
-    Transform orbit(0, 1, glm::vec3(0, 0, 5));
-    program.setMat4f("transform", (float*)spin.getModelFloat());
-    //program.setMat4f("transform_orbit", t_orbit.getModelFloat());
+    Transform model(glm::vec3(0, 0, -3.0f), glm::vec3(1, 1, 1), glm::vec3(-55.0f, 0, 0));
+    //glm::mat4 projection;
+    //projection = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1f, 100.0f);
+    //glm::mat4 respm = projection * glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    //respm = respm * *(model.getModel());
+    //program.setMat4f("transform", &respm[0][0]);
+
+    glm::mat4 mvp = camera.getViewProjection() * model.getModelRef();
+    program.setMat4f("transform", &mvp[0][0]);
 
     /* Load texture */
     Texture crate("/store/Code/cpp/learnopengl/img/textures/container.png", GL_RGB, 0);
@@ -165,7 +180,7 @@ int main( void )
     /* Or like this */
     program.setInt("ourTexture2", 1);
 
-    double time = 0, rotateTime = glfwGetTime();
+    double time = 0;//, rotateTime = glfwGetTime();
     glm::mat4 res(1.0f);
 
     /* While window is open */
@@ -180,17 +195,6 @@ int main( void )
         /* Run GLSL program */
         program.use();
         program.setFloat("ourColor", (sin(time)/2.0f) + 0.5f);
-
-        if ( time - rotateTime > 0.05f ) 
-        {
-            spin.rerotate();
-            res = trns * spin;
-            orbit.rerotate();
-            res = orbit * res;
-            program.setMat4f("transform", &res[0][0]); 
-
-            rotateTime = glfwGetTime();
-        }
 
         /* Bind and draw*/
         glBindVertexArray(vertexArray.getHandler());   
