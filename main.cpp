@@ -80,7 +80,7 @@ int init(std::unique_ptr<Window> &window) {
  */
 void createBuffer(VertexArray &vertexArray) {
     // An array of 3 vectors which represents 3 vertices
-    static const GLfloat vertices[] = {
+    GLfloat vertices[] = {
          // Positions       // Colors              // Texture coords
          0.5f,  0.5f, 0.0f, /**/ 1.0f, 0.0f, 0.0f, /**/ 1.0f, 1.0f, // top right
          0.5f, -0.5f, 0.0f, /**/ 0.0f, 0.0f, 0.0f, /**/ 1.0f, 0.0f, // bottom right
@@ -88,7 +88,7 @@ void createBuffer(VertexArray &vertexArray) {
         -0.5f,  0.5f, 0.0f, /**/ 0.0f, 0.0f, 1.0f, /**/ 0.0f, 1.0f, // top left 
     };
 
-    static const uint32_t indices[] = {  // note that we start from 0!
+    uint32_t indices[] = {  // note that we start from 0!
         0, 1, 3,  // first Triangle
         1, 2, 3   // second Triangle
     };
@@ -117,6 +117,44 @@ void spin() {
     //Transform trns( glm::vec3(0.25f, 0, 0), glm::vec3(1, 1, 1), glm::vec3(0, 0, 0));
     //Transform orbit(0, 1, glm::vec3(0, 0, 5));
     //program.setMat4f("transform", (float*)spin.getModelFloat());
+}
+
+/**
+ * ******************************************************
+ * Create world axes
+ * ******************************************************
+**/
+void createWorldAxes(VertexArray& waVA) {
+    float vertices[] = {
+        0, 0, 0,    1, 0, 0,
+        0, 0, 0,    0, 1, 0,
+        0, 0, 0,    0, 0, 1 
+    };
+
+    /* Bind VBO */
+    Buffer<float> vbo(GL_ARRAY_BUFFER, GL_STATIC_DRAW, vertices, sizeof(vertices));
+    vbo.hexDump();
+
+    /* Formating attributes */
+    waVA.attribPointer(3, 3* sizeof(float), 0);
+    waVA.enableAllAttribArrays();
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+/**
+ * ******************************************************
+ * Create xz plane grid
+ * ******************************************************
+**/
+void createGrid(VertexArray& gridVA) {
+    float vertices[300];
+    for (int i=0;i<100;i++) {
+        vertices[i]=i;      /* x = i */
+        vertices[i+1]=0;    /* y = 0 */
+        vertices[i+2]=i;    /* z = i */
+    }
 }
 
 /**
@@ -151,6 +189,12 @@ int main( void )
     /* This will identify our vertex buffer */
     createBuffer(vertexArray);
 
+    VertexArray waVA;
+    createWorldAxes(waVA);
+
+    VertexArray gridVA;
+    createGrid(gridVA);
+
     /* Compile shaders and link program */
     Shader vShader("/store/Code/cpp/learnopengl/shaders/SimpleVertexShader.vs", GL_VERTEX_SHADER); 
     Shader fShader("/store/Code/cpp/learnopengl/shaders/SimpleFragmentShader.fs", GL_FRAGMENT_SHADER); 
@@ -160,7 +204,7 @@ int main( void )
     Camera camera(glm::vec3(0, 0, 1.0f), 70.0f, ASPECT_RATIO, 0.01f, 1000.0f);
 
     /* Transform */
-    Transform model(glm::vec3(0, 0, -3.0f), glm::vec3(1, 1, 1), glm::vec3(-55.0f, 0, 0));
+    Transform model(glm::vec3(0, 0, -1.0f), glm::vec3(1, 1, 1), glm::vec3(-55.0f, 0, 0));
     //glm::mat4 projection;
     //projection = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1f, 100.0f);
     //glm::mat4 respm = projection * glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
@@ -183,6 +227,9 @@ int main( void )
     double time = 0;//, rotateTime = glfwGetTime();
     glm::mat4 res(1.0f);
 
+    // Rotate camera
+    float camX = 0, camZ = 0, radius = 10.0f;
+    camera.fix(glm::vec3(0,0,0));
     /* While window is open */
     while(!uptrWindow.get()->shouldClose())
     {
@@ -192,6 +239,12 @@ int main( void )
         /* Clear */
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // Rotate camera
+        //camX = sin(time) * radius;
+        //camZ = cos(time) * radius;
+        //mvp = camera.move(glm::vec3(camX, 0, camZ)) * model.getModelRef();
+        //program.setMat4f("transform", &mvp[0][0]);
+
         /* Run GLSL program */
         program.use();
         program.setFloat("ourColor", (sin(time)/2.0f) + 0.5f);
@@ -199,6 +252,8 @@ int main( void )
         /* Bind and draw*/
         glBindVertexArray(vertexArray.getHandler());   
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(waVA.getHandler());
+        glDrawArrays(GL_LINES, 0, 18);
 
         /* Swap buffers */
         uptrWindow.get()->swapBuffers();

@@ -118,7 +118,7 @@ class Buffer{
         uint32_t            handler_;   /* Buffer handler */
         size_t              size_;      /* Buffer size */
         uint8_t             hexDumpMask_;
-        std::unique_ptr<T>  uptrData_;  /* Data to be drawn */ // TODO is this data copied by OpenGL? should I free it?
+        std::unique_ptr<T>  uptrData_;  /* Data to be drawn */ // TODO should I really save this?
 };
 
 
@@ -284,6 +284,24 @@ class VertexArray {
                GL_FALSE,                    /* normalized or not */
                stride,                      /* stride */
                (void*)offset                /* array buffer offset */
+            );
+        }
+
+        /**
+         * ******************************************************
+         * Emplace back for buffer format. ShortHand for float. 
+         * ******************************************************
+        **/
+        void attribPointerF(size_t size, size_t stride, size_t offset)
+        {
+            attrPtrs_.emplace_back(size, stride, offset);
+            glVertexAttribPointer(
+               attrPtrs_.size()-1,          /* attribute key. */
+               size,                        /* size */
+               GL_FLOAT,                    /* type */
+               GL_FALSE,                    /* normalized or not */
+               stride * (sizeof(float)),                      /* stride */
+               (void*)(offset * (sizeof(float)))                /* array buffer offset */
             );
         }
 
