@@ -36,12 +36,18 @@ class Camera {
             direction_      = pos_ + forward_;                              /* Default camera dir */
             up_             = glm::vec3(0.0f, 1.0f, 0.0f);                  /* Up towards +y */
             projection_     = glm::perspective(fov, aspect, zNear, zFar);
+            speed_ = 0;
         }
 
     private: /* Methods */
 
     public: /* Methods */
 
+        /**
+         * ******************************************************
+         * TODO doc this
+         * ******************************************************
+        **/
         glm::mat4 getViewProjection() const
         {
             return projection_ * glm::lookAt(pos_, direction_, up_);
@@ -66,9 +72,53 @@ class Camera {
             direction_ = pos_ + forward_;
         }
 
+        /**
+         * ******************************************************
+         * TODO Doc this
+         * ******************************************************
+        **/
         glm::mat4 move(const glm::vec3& pos) {
             pos_ = pos;
             return getViewProjection(); 
+        }
+
+        /**
+         * ******************************************************
+         * Getters
+         * ******************************************************
+        **/
+        glm::vec3 getPos() { return pos_; }
+        glm::vec3 getForward() { return forward_; }
+        glm::vec3 getDirecton() { return direction_; }
+        glm::vec3 getUp() { return up_; }
+        glm::mat4 getProjection() { return projection_; }
+        float getSpeed() { return speed_; }
+
+        /**
+         * ******************************************************
+         * Setters 
+         * ******************************************************
+        **/
+        void setPos(glm::vec3 pos) 
+        { 
+            pos_ = pos;
+            direction_ = pos_ + forward_;
+        }
+
+        void setForward(glm::vec3 forward)
+        {
+            forward_ = forward;
+            direction_ = pos_ + forward_;
+        }
+
+        void setUp(glm::vec3 up)
+        {
+            up_ = up;
+        }
+
+        void setSpeed(float speed)
+        {
+            speed_ = speed;
         }
 
     private: /* Members */
@@ -77,6 +127,7 @@ class Camera {
        glm::vec3 forward_;
        glm::vec3 direction_;
        glm::vec3 up_;
+       float speed_;
 };
 
 #endif

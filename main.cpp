@@ -39,6 +39,7 @@
 #include "Buffers.hpp"
 #include "Transform.hpp"
 #include "Camera.hpp"
+#include "Model.hpp"
 
 
 /**
@@ -159,6 +160,17 @@ void createGrid(VertexArray& gridVA) {
 
 /**
  * ******************************************************
+ * Load a default model
+ * ******************************************************
+**/
+Model * loadModel() {
+    Model * model = new Model("/store/Code/cpp/learnopengl/models", GL_STATIC_DRAW);
+
+    return model;
+}
+
+/**
+ * ******************************************************
  * Main
  * ******************************************************
  */
@@ -195,6 +207,10 @@ int main( void )
     VertexArray gridVA;
     createGrid(gridVA);
 
+
+    /* Load a new model */
+    Model *nanosuit = loadModel();
+
     /* Compile shaders and link program */
     Shader vShader("/store/Code/cpp/learnopengl/shaders/SimpleVertexShader.vs", GL_VERTEX_SHADER); 
     Shader fShader("/store/Code/cpp/learnopengl/shaders/SimpleFragmentShader.fs", GL_FRAGMENT_SHADER); 
@@ -202,6 +218,9 @@ int main( void )
     program.use();
 
     Camera camera(glm::vec3(0, 0, 1.0f), 70.0f, ASPECT_RATIO, 0.01f, 1000.0f);
+    UserPointer up = { &camera, -90.0f, 0.0f, 800.0f / 2.0, 600.0f / 2.0f,  70.0f, true};
+    glfwSetInputMode(uptrWindow.get()->getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetWindowUserPointer(uptrWindow.get()->getWindow(), (void*)&up); //TODO is this thread safe?
 
     /* Transform */
     Transform model(glm::vec3(0, 0, -1.0f), glm::vec3(1, 1, 1), glm::vec3(-55.0f, 0, 0));
@@ -224,17 +243,24 @@ int main( void )
     /* Or like this */
     program.setInt("ourTexture2", 1);
 
-    double time = 0;//, rotateTime = glfwGetTime();
+    double time = 0, deltaTime = 0, lastFrame = 0;//, rotateTime = glfwGetTime();
     glm::mat4 res(1.0f);
 
     // Rotate camera
     float camX = 0, camZ = 0, radius = 10.0f;
-    camera.fix(glm::vec3(0,0,0));
+    //camera.fix(glm::vec3(0,0,0)); // TODO fix if you want to rotate around a point
     /* While window is open */
     while(!uptrWindow.get()->shouldClose())
     {
         /* Time */
         time = glfwGetTime();
+        deltaTime = time - lastFrame;
+        lastFrame = time;
+
+        /* Input */
+        uptrWindow.get()->processInput(deltaTime, camera);
+        mvp = camera.getViewProjection() * model.getModelRef();
+        program.setMat4f("transform", &mvp[0][0]);
 
         /* Clear */
         glClear(GL_COLOR_BUFFER_BIT);
@@ -248,7 +274,8 @@ int main( void )
         /* Run GLSL program */
         program.use();
         program.setFloat("ourColor", (sin(time)/2.0f) + 0.5f);
-
+        //nanosuit->draw(program);
+        
         /* Bind and draw*/
         glBindVertexArray(vertexArray.getHandler());   
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

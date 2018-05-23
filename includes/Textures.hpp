@@ -67,6 +67,8 @@ class Texture {
             glBindTexture(GL_TEXTURE_2D, handler_);
         }
 
+        uint32_t getHandler() { return handler_; }
+
     private: /* Methods */
         /**
          * ******************************************************
@@ -105,8 +107,10 @@ class Texture {
                         GL_UNSIGNED_BYTE,   // Data type of pixel data
                         data_);             // Pointer to binary image
                 glGenerateMipmap(GL_TEXTURE_2D);
+				//stbi_image_free(data); // TODO Free here as well?
             } else {
                 LOG(L_ERR, "Could not open texture: %s!", path);
+				stbi_image_free(data_);
             }
         }
 

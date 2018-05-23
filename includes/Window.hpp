@@ -20,6 +20,20 @@
 
 #include <glfw3.h>
 
+#include "Camera.hpp"
+
+struct UserPointer {
+	Camera * camera;
+	//Transform * model; // TODO add this when implementing quats
+    float yaw;
+    float pitch;
+    float lastX;
+    float lastY;
+    float fov;
+    bool firstMouse;
+};
+
+
 /**
  * ******************************************************
  * Resize callback
@@ -47,8 +61,9 @@ void error_callback(int error, const char* descr)
 **/
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, 1 /* Set */);
+    }
 }
 
 /**
@@ -59,6 +74,52 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void window_close_callback(GLFWwindow* window)
 {
     LOG(L_INFO, "Window is closing");
+}
+
+/**
+ * ******************************************************
+ * Mouse callback
+ * ******************************************************
+**/
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    UserPointer *up = (UserPointer*) glfwGetWindowUserPointer(window);
+    if (up == NULL || up->camera == NULL) {
+        LOG(L_CRIT, "User pointer or camera not set");
+        exit(1);
+    }
+
+    if (up->firstMouse)
+    {
+        up->lastX = xpos;
+        up->lastY = ypos;
+        up->firstMouse = false;
+    }
+
+    float xoffset = xpos - up->lastX;
+    float yoffset = up->lastY - ypos; // reversed since y-coordinates go from bottom to top
+    up->lastX = xpos;
+    up->lastY = ypos;
+
+    float sensitivity = 0.1f; // change this value to your liking
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    up->yaw += xoffset;
+    up->pitch += yoffset;
+
+    // make sure that when pitch is out of bounds, screen doesn't get flipped
+    if (up->pitch > 89.0f)
+        up->pitch = 89.0f;
+    if (up->pitch < -89.0f)
+        up->pitch = -89.0f;
+
+    glm::vec3 forward;
+    forward.x = cos(glm::radians(up->yaw)) * cos(glm::radians(up->pitch));
+    forward.y = sin(glm::radians(up->pitch));
+    forward.z = sin(glm::radians(up->yaw)) * cos(glm::radians(up->pitch));
+
+    up->camera->setForward(glm::normalize(forward));
 }
 
 /**
@@ -116,11 +177,27 @@ class Window {
          * Process input
          * ******************************************************
         **/
-        void processInput() 
+        void processInput(double deltaTime, Camera & camera) 
         {
-            if(glfwGetKey(window_, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            {
-                glfwSetWindowShouldClose(window_, true);
+			camera.setSpeed(2.5 * deltaTime);
+			if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS) {
+				camera.setPos( camera.getPos() += 
+                        camera.getSpeed() * camera.getForward());
+            }
+
+			if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS) {
+				camera.setPos( camera.getPos() -= 
+                        camera.getSpeed() * camera.getForward());
+            }
+
+			if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS) {
+				camera.setPos( camera.getPos() -= 
+                        glm::normalize(glm::cross(camera.getForward(), camera.getUp())) * camera.getSpeed());
+            }
+
+			if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS) {
+				camera.setPos( camera.getPos() += 
+                        glm::normalize(glm::cross(camera.getForward(), camera.getUp())) * camera.getSpeed());
             }
         }
 
@@ -216,6 +293,7 @@ class Window {
             glfwSetFramebufferSizeCallback      (window_,       framebuffer_size_callback);
             glfwSetKeyCallback                  (window_,       key_callback);
             glfwSetWindowCloseCallback          (window_,       window_close_callback);
+            glfwSetCursorPosCallback            (window_,       mouse_callback);
         }
 
     private: /* Members */

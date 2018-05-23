@@ -16,13 +16,13 @@
  * Purpose
  */
 
+#ifndef _LOGL_PROGRAM_HPP_
+#define _LOGL_PROGRAM_HPP_
+
 /* Glew */
 #include <GL/glew.h>
 
 #include <Shader.hpp>
-
-#ifndef _LOGL_PROGRAM_HPP_
-#define _LOGL_PROGRAM_HPP_
 
 /**
  * ******************************************************

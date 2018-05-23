@@ -347,6 +347,19 @@ class Transform {
             model();
         };
 
+
+        /**
+         * ******************************************************
+         * Update the rotation matrix using the given quat.
+         * It will just multiply the two quats together and
+         * generate a new rotation matrix.
+         * ******************************************************
+        **/
+        void rotate(glm::quat rotQuat) 
+        {
+            //rotate_.rotQuat(rotQuat); //TODO
+        }
+
         /**
          * ******************************************************
          * @brief Recalculates the model by reapplying the

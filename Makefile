@@ -5,9 +5,9 @@
 ##############################################################################################
 
 # ---------------------------- Check subdirs for libraries ---------------------------- #
-#                                                                                       #
+#                                           											#
 # ------------------------------------------------------------------------------------- #
-f_check_subdirs_for_libs = $(if $(library_dirs),$(compile_subdirectories),)
+f_check_subdirs_for_libs = $(if $(project_library_subdir),$(compile_subdirectories),)
 
 
 # ---------------------------- Compile subirs ------------------------------------------#
@@ -17,8 +17,8 @@ define f_compile_subdir
 cd $(1); make; cd $(CURR_DIR); 
 endef
 
-compile_subdirectories = $(foreach dir,$(library_dirs),$(call f_compile_subdir,$(dir)))
-clean_subdirectories = $(foreach dir,$(library_dirs),$(call f_clean_subdir,$(dir)))
+compile_subdirectories = $(foreach dir,$(project_library_subdir),$(call f_compile_subdir,$(dir)))
+clean_subdirectories = $(foreach dir,$(project_library_subdir),$(call f_clean_subdir,$(dir)))
 
 
 # ---------------------------- User defined functions ----------------------------------#
@@ -116,9 +116,11 @@ include_dirs := /usr/include/GL \
 	/usr/include/glm \
 	/usr/include/GLFW \
 	/store/Code/cpp/stb/ \
-	includes
-library_dirs := common
-libraries := glfw GL GLEW loglcommon
+	/store/Code/cpp/assimp/include/ \
+	./includes
+project_library_subdir := common
+library_dirs := /store/Code/cpp/assimp/lib/
+libraries := glfw GL GLEW loglcommon assimp
 
 # ---------------------------- Compiler --------------------- # 
 #                                                             #
@@ -172,6 +174,7 @@ CPPFLAGS += -Wall -O0 -fno-diagnostics-show-caret -std=c++11 -fPIC
 
 CPPFLAGS += $(foreach includedir,$(include_dirs),-I$(includedir))
 LDFLAGS += $(foreach librarydir,$(library_dirs),-L$(librarydir))
+LDFLAGS += $(foreach librarydir,$(project_library_subdir),-L$(librarydir))
 LDFLAGS += $(foreach library,$(libraries),-l$(library))
 
 
@@ -219,6 +222,7 @@ print-all: ;
 >    @echo subdirs              = $(subdirs) 
 >    @echo CURR_DIR             = $($CURR_DIR)
 >    @echo include_dirs = $(include_dirs) 
+>    @echo project_library_subdir = $(project_library_subdir)
 >    @echo library_dirs = $(library_dirs)
 >    @echo libraries    = $(libraries)
 
