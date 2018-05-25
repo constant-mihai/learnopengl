@@ -19,18 +19,20 @@
 #define _LOGL_WINDOW_H_
 
 #include <glfw3.h>
+#include "glm/gtx/string_cast.hpp"
 
 #include "Camera.hpp"
+#include "Transform.hpp"
 
 struct UserPointer {
 	Camera * camera;
-	//Transform * model; // TODO add this when implementing quats
     float yaw;
     float pitch;
-    float lastX;
-    float lastY;
-    float fov;
+    double lastX;
+    double lastY;
+    double fov;
     bool firstMouse;
+    int i;
 };
 
 
@@ -89,6 +91,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
         exit(1);
     }
 
+
     if (up->firstMouse)
     {
         up->lastX = xpos;
@@ -105,21 +108,56 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 
-    up->yaw += xoffset;
-    up->pitch += yoffset;
+    up->yaw     = xoffset;
+    up->pitch   = yoffset;
 
     // make sure that when pitch is out of bounds, screen doesn't get flipped
-    if (up->pitch > 89.0f)
-        up->pitch = 89.0f;
-    if (up->pitch < -89.0f)
-        up->pitch = -89.0f;
+    if (up->pitch > 89.0f)        up->pitch = 89.0f;
+    if (up->pitch < -89.0f)       up->pitch = -89.0f;
 
-    glm::vec3 forward;
-    forward.x = cos(glm::radians(up->yaw)) * cos(glm::radians(up->pitch));
-    forward.y = sin(glm::radians(up->pitch));
-    forward.z = sin(glm::radians(up->yaw)) * cos(glm::radians(up->pitch));
+    float radPitch = glm::radians(up->pitch);
+    float radYaw = glm::radians(up->yaw);
+    LOG(L_DEBUG, "Pitch = %f, Yaw = %f, RadPitch = %f, RadYaw = %f", 
+            up->pitch, up->yaw, radPitch, radYaw);
 
-    up->camera->setForward(glm::normalize(forward));
+    glm::vec3 xAxis = up->camera->getXAxis();
+    glm::vec3 yAxis = up->camera->getUp();
+    glm::vec3 camFwd = up->camera->getForward();
+
+    LOG(L_DEBUG, "X-Axis = %s, Y-Axis = %s, Z-Axis = %s",
+            glm::to_string(xAxis).c_str(), 
+            glm::to_string(yAxis).c_str(), 
+            glm::to_string(camFwd).c_str());
+    /* ---------------------------- Euler ------------------- */
+    //camFwd.x = cos(radYaw) * cos(radPitch);
+    //camFwd.y = sin(radPitch);
+    //camFwd.z = sin(radYaw) * cos(radPitch);
+    
+    //TODO this doesn't take into acount the camera speed.
+    //There should be some internal method so the user doesn't care about this
+
+    /* ---------------------------- Quat ------------------- */
+    glm::quat pitchQuat = glm::angleAxis(radPitch,xAxis); 
+    glm::quat yawQuat = glm::angleAxis(radYaw, yAxis); 
+    glm::quat combinedRot = pitchQuat * yawQuat;
+    //glm::quat combinedRot = glm::cross(pitchQuat,yawQuat);
+
+    combinedRot = glm::normalize(combinedRot);
+    glm::mat4 transform = glm::toMat4(combinedRot);
+    glm::vec4 fwd4 = glm::vec4(camFwd, 1);
+    fwd4 = transform * fwd4;
+    camFwd.x = fwd4.x;
+    camFwd.y = fwd4.y;
+    camFwd.z = fwd4.z;
+
+    //camFwd = glm::rotate(combinedRot, camFwd);
+
+    LOG(L_ERR, "FWD3 = %s", glm::to_string(camFwd).c_str());
+
+    up->camera->setForward(camFwd);
+
+    up->i++;
+    if (up->i == 100 ) exit(1);
 }
 
 /**
@@ -179,6 +217,8 @@ class Window {
         **/
         void processInput(double deltaTime, Camera & camera) 
         {
+            //TODO Camera needs some short hand function for changing
+            //position using the set speed
 			camera.setSpeed(2.5 * deltaTime);
 			if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS) {
 				camera.setPos( camera.getPos() += 

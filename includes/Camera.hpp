@@ -91,6 +91,7 @@ class Camera {
         glm::vec3 getForward() { return forward_; }
         glm::vec3 getDirecton() { return direction_; }
         glm::vec3 getUp() { return up_; }
+        glm::vec3 getXAxis() { return glm::normalize(glm::cross(forward_, up_)); }
         glm::mat4 getProjection() { return projection_; }
         float getSpeed() { return speed_; }
 

@@ -139,7 +139,7 @@ class Transform {
                 };
 
             private:
-                glm::vec3       vec_;
+                glm::vec3 vec_;
         };
 
         /**
@@ -171,7 +171,7 @@ class Transform {
                 };
 
             private:
-                glm::vec3       vec_;
+                glm::vec3 vec_;
         };
 
         /**
@@ -233,7 +233,7 @@ class Transform {
                     tf = glm::toMat4(qt);
                 }
             private:
-                glm::vec3       vec_;
+                glm::vec3  vec_;
         };
 
     private: /* Methods */
@@ -355,9 +355,10 @@ class Transform {
          * generate a new rotation matrix.
          * ******************************************************
         **/
-        void rotate(glm::quat rotQuat) 
+        void rotate(glm::vec3 angles) 
         {
-            //rotate_.rotQuat(rotQuat); //TODO
+            rotate_.setVec(angles);
+            model();
         }
 
         /**

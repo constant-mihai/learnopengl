@@ -30,6 +30,8 @@
 #include "common/shader.hpp"
 #include "common/debug.hpp"
 
+#include "glm/gtx/string_cast.hpp"
+
 /* Includes */
 #include <Utils.hpp>
 #include "Shader.hpp"
@@ -169,6 +171,27 @@ Model * loadModel() {
     return model;
 }
 
+
+void testQuatRot() {
+
+    float pitch = glm::radians(405.0f);
+    float yaw = glm::radians(405.0f);
+    glm::vec3 xAxis(1.0f, 0.0f, 0.0f);
+    glm::vec3 yAxis(0.0f, 1.0f, 0.0f);
+    glm::vec3 zAxis(0, 0, -1);
+
+    glm::quat pitchQuat = glm::angleAxis(pitch, xAxis); 
+    glm::quat yawQuat = glm::angleAxis(yaw, yAxis);
+    glm::quat combinedRot = pitchQuat * yawQuat;
+    //combinedRot = glm::normalize(combinedRot);
+    glm::mat4 transform = glm::toMat4(combinedRot);
+    glm::vec4 fwd4 = glm::vec4(zAxis, 1);
+    fwd4 = transform * fwd4;
+    glm::vec3 fwd3(fwd4);
+    LOG(L_ERR, "Vector = %s", glm::to_string(fwd3).c_str());
+    exit(1);
+}
+
 /**
  * ******************************************************
  * Main
@@ -183,6 +206,8 @@ int main( void )
         LOG(L_ERR, "Could not open window!\n");
         exit(1);
     }
+
+    //testQuatRot();
 
     /* Enable OpenGL debug */
     loglEnableDebug();
@@ -218,9 +243,6 @@ int main( void )
     program.use();
 
     Camera camera(glm::vec3(0, 0, 1.0f), 70.0f, ASPECT_RATIO, 0.01f, 1000.0f);
-    UserPointer up = { &camera, -90.0f, 0.0f, 800.0f / 2.0, 600.0f / 2.0f,  70.0f, true};
-    glfwSetInputMode(uptrWindow.get()->getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetWindowUserPointer(uptrWindow.get()->getWindow(), (void*)&up); //TODO is this thread safe?
 
     /* Transform */
     Transform model(glm::vec3(0, 0, -1.0f), glm::vec3(1, 1, 1), glm::vec3(-55.0f, 0, 0));
@@ -229,6 +251,11 @@ int main( void )
     //glm::mat4 respm = projection * glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
     //respm = respm * *(model.getModel());
     //program.setMat4f("transform", &respm[0][0]);
+    //
+    UserPointer up = { &camera, -90.0f, 0.0f, 800.0f / 2.0, 600.0f / 2.0f,  70.0f, true, 0};
+    glfwSetInputMode(uptrWindow.get()->getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetWindowUserPointer(uptrWindow.get()->getWindow(), (void*)&up); //TODO is this thread safe?
+
 
     glm::mat4 mvp = camera.getViewProjection() * model.getModelRef();
     program.setMat4f("transform", &mvp[0][0]);
