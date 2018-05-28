@@ -32,7 +32,6 @@ struct UserPointer {
     double lastY;
     double fov;
     bool firstMouse;
-    int i;
 };
 
 
@@ -108,56 +107,66 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 
-    up->yaw     = xoffset;
-    up->pitch   = yoffset;
+    up->yaw     += xoffset;
+    up->pitch   += yoffset;
 
+#ifdef EULER_CAMERA
     // make sure that when pitch is out of bounds, screen doesn't get flipped
     if (up->pitch > 89.0f)        up->pitch = 89.0f;
     if (up->pitch < -89.0f)       up->pitch = -89.0f;
 
     float radPitch = glm::radians(up->pitch);
     float radYaw = glm::radians(up->yaw);
-    LOG(L_DEBUG, "Pitch = %f, Yaw = %f, RadPitch = %f, RadYaw = %f", 
+#else
+    // make sure that when pitch is out of bounds, screen doesn't get flipped
+    if (up->pitch > 89.0f)        yoffset = 0.0f;
+    if (up->pitch < -89.0f)       yoffset = 0.0f;
+
+    float radPitch = glm::radians(yoffset);
+    float radYaw = glm::radians(-xoffset);
+#endif
+
+    LOG(L_DBG, "Pitch = %f, Yaw = %f, RadPitch = %f, RadYaw = %f", 
             up->pitch, up->yaw, radPitch, radYaw);
 
     glm::vec3 xAxis = up->camera->getXAxis();
     glm::vec3 yAxis = up->camera->getUp();
     glm::vec3 camFwd = up->camera->getForward();
 
-    LOG(L_DEBUG, "X-Axis = %s, Y-Axis = %s, Z-Axis = %s",
+    LOG(L_DBG, "X-Axis = %s, Y-Axis = %s, Z-Axis = %s",
             glm::to_string(xAxis).c_str(), 
             glm::to_string(yAxis).c_str(), 
             glm::to_string(camFwd).c_str());
     /* ---------------------------- Euler ------------------- */
-    //camFwd.x = cos(radYaw) * cos(radPitch);
-    //camFwd.y = sin(radPitch);
-    //camFwd.z = sin(radYaw) * cos(radPitch);
+#ifdef EULER_CAMERA
+    camFwd.x = cos(radYaw) * cos(radPitch);
+    camFwd.y = sin(radPitch);
+    camFwd.z = sin(radYaw) * cos(radPitch);
     
-    //TODO this doesn't take into acount the camera speed.
-    //There should be some internal method so the user doesn't care about this
-
     /* ---------------------------- Quat ------------------- */
+#else
     glm::quat pitchQuat = glm::angleAxis(radPitch,xAxis); 
     glm::quat yawQuat = glm::angleAxis(radYaw, yAxis); 
-    glm::quat combinedRot = pitchQuat * yawQuat;
-    //glm::quat combinedRot = glm::cross(pitchQuat,yawQuat);
+    glm::quat combinedRot = yawQuat * pitchQuat;
 
-    combinedRot = glm::normalize(combinedRot);
-    glm::mat4 transform = glm::toMat4(combinedRot);
-    glm::vec4 fwd4 = glm::vec4(camFwd, 1);
-    fwd4 = transform * fwd4;
-    camFwd.x = fwd4.x;
-    camFwd.y = fwd4.y;
-    camFwd.z = fwd4.z;
+    //TODO WHERE THE HELL IS THIS ROTATE FUNCTION 
+    camFwd = glm::rotate(combinedRot, camFwd);
 
-    //camFwd = glm::rotate(combinedRot, camFwd);
+    /* Equivalent to the rotate function */
+    //combinedRot = glm::normalize(combinedRot);
+    //glm::mat4 transform = glm::toMat4(combinedRot);
+    //glm::vec4 fwd4 = glm::vec4(camFwd, 1);
+    //fwd4 = transform * fwd4;
+    //camFwd.x = fwd4.x;
+    //camFwd.y = fwd4.y;
+    //camFwd.z = fwd4.z;
+#endif
 
-    LOG(L_ERR, "FWD3 = %s", glm::to_string(camFwd).c_str());
+    LOG(L_DBG, "FWD3 = %s", glm::to_string(camFwd).c_str());
 
+    //TODO this doesn't take into acount the camera speed.
+    //There should be some internal method so the user doesn't care about this
     up->camera->setForward(camFwd);
-
-    up->i++;
-    if (up->i == 100 ) exit(1);
 }
 
 /**

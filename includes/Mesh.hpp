@@ -63,7 +63,7 @@ class Mesh {
             textures_(textures),
             drawType_(drawType),
             VBO_(GL_ARRAY_BUFFER, drawType_ , (float*)vertices_.data(), sizeof(vertices_)),
-            EBO_(GL_ELEMENT_ARRAY_BUFFER, drawType_, (float*)indices.data(), sizeof(indices_)),
+            EBO_(GL_ELEMENT_ARRAY_BUFFER, drawType_, (float*)indices_.data(), sizeof(indices_)),
             VAO_()
         {
             /* Positions */

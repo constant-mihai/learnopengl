@@ -33,8 +33,10 @@ typedef enum {
     L_MEM     = 6,
 }LoggingLevels;
 
+#define LOG_LEVEL L_INFO
+
 #define LOG(l_type, msg, ...) \
-    do{ printf(msg "\n", ##__VA_ARGS__); \
+    do{ if (LOG_LEVEL >= l_type) printf(msg "\n", ##__VA_ARGS__); \
     }while(0)
 #else 
 #include <utils/Logging.h>

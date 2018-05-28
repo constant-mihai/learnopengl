@@ -31,7 +31,11 @@
 #include "Mesh.hpp"
 #include "Program.hpp"
 
-
+/**
+ * ******************************************************
+ * TODO DOC THIS
+ * ******************************************************
+**/
 class Model 
 {
     public: /* Constructors */
@@ -176,24 +180,24 @@ class Model
             // normal: texture_normalN
 
             // 1. diffuse maps
-            std::vector<TextureDescr> diffuseMaps = loadMaterialTextures(material, 
-                    aiTextureType_DIFFUSE, "texture_diffuse");
-            textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+            //std::vector<TextureDescr> diffuseMaps = loadMaterialTextures(material, 
+                    //aiTextureType_DIFFUSE, "texture_diffuse");
+            //textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-            // 2. specular maps
-            std::vector<TextureDescr> specularMaps = loadMaterialTextures(material, 
-                    aiTextureType_SPECULAR, "texture_specular");
-            textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+            //// 2. specular maps
+            //std::vector<TextureDescr> specularMaps = loadMaterialTextures(material, 
+                    //aiTextureType_SPECULAR, "texture_specular");
+            //textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-            // 3. normal maps
-            std::vector<TextureDescr> normalMaps = loadMaterialTextures(material, 
-                    aiTextureType_HEIGHT, "texture_normal");
-            textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+            //// 3. normal maps
+            //std::vector<TextureDescr> normalMaps = loadMaterialTextures(material, 
+                    //aiTextureType_HEIGHT, "texture_normal");
+            //textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-            // 4. height maps
-            std::vector<TextureDescr> heightMaps = loadMaterialTextures(material, 
-                    aiTextureType_AMBIENT, "texture_height");
-            textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
+            //// 4. height maps
+            //std::vector<TextureDescr> heightMaps = loadMaterialTextures(material, 
+                    //aiTextureType_AMBIENT, "texture_height");
+            //textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
             
             // return a mesh object created from the extracted mesh data
             return new Mesh(vertices, indices, textures, drawType);
@@ -260,12 +264,12 @@ class Model
 				aiString str;
 				mat->GetTexture(type, i, &str);
 				TextureDescr textureDescr;
-				//textureDescr.id_ = TextureFromFile(str.C_Str(), directory);
-                std::string path = directory + std::string(str.C_Str());
+				//textureDescr.id_ = TextureFromFile(str.C_Str(), directory); // TODO this is alread implemented in the Texture class
+                std::string path = directory + '/' + std::string(str.C_Str());
                 Texture texture(path.c_str() , GL_RGB, 0);
                 textureDescr.id_ = texture.getHandler();
 				textureDescr.type_ = typeName;
-				textureDescr.path_ = std::string(str.C_Str());
+				textureDescr.path_ =  path;
 				textureDescrs.push_back(textureDescr);
 			}
 			return textureDescrs;

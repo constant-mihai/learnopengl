@@ -35,7 +35,7 @@ clean_subdirectories = $(foreach dir,$(project_library_subdir),$(call f_clean_su
 #  - cpp
 #  - C
 f_deep_source_search = $(foreach dir,$(subdirs),$(wildcard $(dir)/*.$(1)))
-f_deep_includes_search = $(foreach dir,$(include_dirs),$(wildcard $(dir)/*.$(1)))
+f_deep_includes_search = $(foreach dir,$(subdir_includes),$(wildcard $(dir)/*.$(1)))
 
 # ---------------------------- Compile shared lib --------------------------------------#
 #                                                                                       #
@@ -110,14 +110,22 @@ shl_fullname := $(shl_soname).$(shl_minor_number).$(shl_release_number)
 # ---------------------------- Directories ------------------ # 
 #                                                             #
 # ----------------------------------------------------------- # 
-subdirs := 
+subdirs := \
+
+subdir_includes:= \
+	./includes
+
 CURR_DIR := $(PWD)
+
+# TODO I was wondering here if I should append the header files
+# in these directories as program source files. Doing so will 
+# make the main recipe dependant on them.
 include_dirs := /usr/include/GL \
 	/usr/include/glm \
 	/usr/include/GLFW \
 	/store/Code/cpp/stb/ \
 	/store/Code/cpp/assimp/include/ \
-	./includes
+
 project_library_subdir := common
 library_dirs := /store/Code/cpp/assimp/lib/
 libraries := glfw GL GLEW loglcommon assimp
@@ -173,6 +181,7 @@ CFLAGS += -Wall -fno-diagnostics-show-caret
 CPPFLAGS += -Wall -O0 -fno-diagnostics-show-caret -std=c++11 -fPIC
 
 CPPFLAGS += $(foreach includedir,$(include_dirs),-I$(includedir))
+CPPFLAGS += $(foreach includedir,$(subdir_includes),-I$(includedir))
 LDFLAGS += $(foreach librarydir,$(library_dirs),-L$(librarydir))
 LDFLAGS += $(foreach librarydir,$(project_library_subdir),-L$(librarydir))
 LDFLAGS += $(foreach library,$(libraries),-l$(library))
@@ -198,6 +207,10 @@ subdirs:
 
 all: main
 
+tags:
+>	@ctags -R .
+>	@ctags -Ra $(include_dirs)
+
 shared: $(objs)
 >   @echo Making Shared lib 
 >   $(f_check_subdirs_for_libs)
@@ -220,11 +233,12 @@ print-all: ;
 
 >    @echo ------------------------------------------ Directories  
 >    @echo subdirs              = $(subdirs) 
+>    @echo subdir_includes      = $(subdir_includes)
 >    @echo CURR_DIR             = $($CURR_DIR)
->    @echo include_dirs = $(include_dirs) 
+>    @echo include_dirs 		= $(include_dirs) 
 >    @echo project_library_subdir = $(project_library_subdir)
->    @echo library_dirs = $(library_dirs)
->    @echo libraries    = $(libraries)
+>    @echo library_dirs 		= $(library_dirs)
+>    @echo libraries    		= $(libraries)
 
 >    @echo ---------------------------- Compiler 
 >    @echo CC                   = $(CC) 

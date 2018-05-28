@@ -166,30 +166,9 @@ void createGrid(VertexArray& gridVA) {
  * ******************************************************
 **/
 Model * loadModel() {
-    Model * model = new Model("/store/Code/cpp/learnopengl/models", GL_STATIC_DRAW);
+    Model * model = new Model("/store/Code/cpp/learnopengl/models/nanosuit.obj", GL_STATIC_DRAW);
 
     return model;
-}
-
-
-void testQuatRot() {
-
-    float pitch = glm::radians(405.0f);
-    float yaw = glm::radians(405.0f);
-    glm::vec3 xAxis(1.0f, 0.0f, 0.0f);
-    glm::vec3 yAxis(0.0f, 1.0f, 0.0f);
-    glm::vec3 zAxis(0, 0, -1);
-
-    glm::quat pitchQuat = glm::angleAxis(pitch, xAxis); 
-    glm::quat yawQuat = glm::angleAxis(yaw, yAxis);
-    glm::quat combinedRot = pitchQuat * yawQuat;
-    //combinedRot = glm::normalize(combinedRot);
-    glm::mat4 transform = glm::toMat4(combinedRot);
-    glm::vec4 fwd4 = glm::vec4(zAxis, 1);
-    fwd4 = transform * fwd4;
-    glm::vec3 fwd3(fwd4);
-    LOG(L_ERR, "Vector = %s", glm::to_string(fwd3).c_str());
-    exit(1);
 }
 
 /**
@@ -206,8 +185,6 @@ int main( void )
         LOG(L_ERR, "Could not open window!\n");
         exit(1);
     }
-
-    //testQuatRot();
 
     /* Enable OpenGL debug */
     loglEnableDebug();
@@ -232,7 +209,6 @@ int main( void )
     VertexArray gridVA;
     createGrid(gridVA);
 
-
     /* Load a new model */
     Model *nanosuit = loadModel();
 
@@ -252,7 +228,7 @@ int main( void )
     //respm = respm * *(model.getModel());
     //program.setMat4f("transform", &respm[0][0]);
     //
-    UserPointer up = { &camera, -90.0f, 0.0f, 800.0f / 2.0, 600.0f / 2.0f,  70.0f, true, 0};
+    UserPointer up = { &camera, -90.0f, 0.0f, 800.0f / 2.0, 600.0f / 2.0f,  70.0f, true};
     glfwSetInputMode(uptrWindow.get()->getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowUserPointer(uptrWindow.get()->getWindow(), (void*)&up); //TODO is this thread safe?
 
@@ -261,8 +237,8 @@ int main( void )
     program.setMat4f("transform", &mvp[0][0]);
 
     /* Load texture */
-    Texture crate("/store/Code/cpp/learnopengl/img/textures/container.png", GL_RGB, 0);
-    Texture smile("/store/Code/cpp/learnopengl/img/textures/awesomeface.png", GL_RGBA, 1);
+    //Texture crate("/store/Code/cpp/learnopengl/img/textures/container.png", GL_RGB, 0);
+    //Texture smile("/store/Code/cpp/learnopengl/img/textures/awesomeface.png", GL_RGBA, 1);
 
     /* We need to tell GLSL which texture is where */
     uint32_t texLoc = glGetUniformLocation(program.getId(), "ourTexture1");
@@ -301,7 +277,7 @@ int main( void )
         /* Run GLSL program */
         program.use();
         program.setFloat("ourColor", (sin(time)/2.0f) + 0.5f);
-        //nanosuit->draw(program);
+        nanosuit->draw(program);
         
         /* Bind and draw*/
         glBindVertexArray(vertexArray.getHandler());   
