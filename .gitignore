@@ -12,6 +12,9 @@
 !*.vs
 !*.fs
 
+# Vim sessions
+!vim.sess
+
 # Unignore text files
 !*.txt
 !*.rar

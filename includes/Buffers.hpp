@@ -109,6 +109,7 @@ class Buffer{
         **/
         void hexDump()
         {
+            LOG(L_INFO, "Buffer %d:", handler_);
             DumpHex(uptrData_.get(), size_, hexDumpMask_);
         }
 

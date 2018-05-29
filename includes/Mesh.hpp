@@ -57,15 +57,21 @@ class Mesh {
          * @param[in] drawType
          * ******************************************************
         **/
-        Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<TextureDescr> textures, uint32_t drawType) :
+        Mesh(std::vector<Vertex> vertices, 
+                std::vector<unsigned int> indices,
+                std::vector<TextureDescr> textures, 
+                uint32_t drawType) :
             vertices_(vertices),
             indices_(indices),
             textures_(textures),
             drawType_(drawType),
-            VBO_(GL_ARRAY_BUFFER, drawType_ , (float*)vertices_.data(), sizeof(vertices_)),
-            EBO_(GL_ELEMENT_ARRAY_BUFFER, drawType_, (float*)indices_.data(), sizeof(indices_)),
-            VAO_()
+            VAO_(),
+            VBO_(GL_ARRAY_BUFFER, drawType_ , (float*)vertices_.data(), vertices_.size()),
+            EBO_(GL_ELEMENT_ARRAY_BUFFER, drawType_, indices_.data(), indices_.size())
         {
+            LOG(L_ERR, "MESH EBO:");
+            VBO_.hexDump();
+            EBO_.hexDump();
             /* Positions */
             VAO_.attribPointer(3, sizeof(Vertex), 0);
             VAO_.attribPointer(3, sizeof(Vertex), offsetof(Vertex, normal_));
@@ -118,8 +124,9 @@ class Mesh {
         uint32_t drawType_;
 
         /*  Render data  */
-        Buffer<float> VBO_, EBO_;
         VertexArray VAO_;
+        Buffer<float> VBO_;
+        Buffer<uint32_t> EBO_;
 
 };  
 
