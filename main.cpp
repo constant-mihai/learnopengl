@@ -188,6 +188,9 @@ int main( void )
 
     /* Enable OpenGL debug */
     loglEnableDebug();
+     
+    /* Depth test */
+    glEnable (GL_DEPTH_TEST);
 
     /* Max vertex attributes */
     int nrAttributes;
@@ -221,7 +224,7 @@ int main( void )
     Camera camera(glm::vec3(0, 0, 1.0f), 70.0f, ASPECT_RATIO, 0.01f, 1000.0f);
 
     /* Transform */
-    Transform model(glm::vec3(0, 0, -1.0f), glm::vec3(1, 1, 1), glm::vec3(-55.0f, 0, 0));
+    Transform model(glm::vec3(0, 0, -1.0f), glm::vec3(1, 1, 1), glm::vec3(0.0f, 0, 0));
     //glm::mat4 projection;
     //projection = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1f, 100.0f);
     //glm::mat4 respm = projection * glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
@@ -266,7 +269,7 @@ int main( void )
         program.setMat4f("transform", &mvp[0][0]);
 
         /* Clear */
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
         // Rotate camera
         //camX = sin(time) * radius;

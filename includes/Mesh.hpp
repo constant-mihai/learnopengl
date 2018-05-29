@@ -60,19 +60,23 @@ class Mesh {
         Mesh(std::vector<Vertex> vertices, 
                 std::vector<unsigned int> indices,
                 std::vector<TextureDescr> textures, 
-                uint32_t drawType) :
+                uint32_t drawType, 
+                std::vector<float> data) :
             vertices_(vertices),
             indices_(indices),
             textures_(textures),
             drawType_(drawType),
             VAO_(),
-            VBO_(GL_ARRAY_BUFFER, drawType_ , (float*)vertices_.data(), vertices_.size()),
-            EBO_(GL_ELEMENT_ARRAY_BUFFER, drawType_, indices_.data(), indices_.size())
+            VBO_(GL_ARRAY_BUFFER, drawType_ , (float*)vertices_.data(), vertices_.size()*sizeof(Vertex)),
+            EBO_(GL_ELEMENT_ARRAY_BUFFER, drawType_, indices_.data(), indices_.size()*sizeof(unsigned int))
         {
-            LOG(L_ERR, "MESH EBO:");
-            VBO_.hexDump();
-            EBO_.hexDump();
+            //LOG(L_ERR, "MESH EBO:");
+            //VBO_.hexDump();
+            //EBO_.hexDump();
             /* Positions */
+
+            int retCmp = memcmp(data.data(), vertices_.data(), vertices_.size()*sizeof(Vertex));
+            LOG(L_ERR, "============================================================ CMP = %d", retCmp);
             VAO_.attribPointer(3, sizeof(Vertex), 0);
             VAO_.attribPointer(3, sizeof(Vertex), offsetof(Vertex, normal_));
             VAO_.attribPointer(2, sizeof(Vertex), offsetof(Vertex, texCoords_));
@@ -105,7 +109,7 @@ class Mesh {
 				else if(name == "texture_specular")
 					number = std::to_string(specularNr++);
 
-				program.setFloat(("material." + name + number).c_str(), i);
+				program.setInt((name + number).c_str(), i);
 				glBindTexture(GL_TEXTURE_2D, textures_[i].id_);
 			}
 			glActiveTexture(GL_TEXTURE0);

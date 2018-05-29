@@ -8,13 +8,16 @@ out vec4 outCol;
 in vec2 vsTex;
 
 uniform float ourColor;
-uniform sampler2D ourTexture1;
-uniform sampler2D ourTexture2;
+//uniform sampler2D ourTexture1;
+//uniform sampler2D ourTexture2;
+uniform sampler2D texture_diffuse1;
+uniform sampler2D texture_diffuse2;
+uniform sampler2D texture_diffuse3;
+uniform sampler2D texture_specular1;
+uniform sampler2D texture_specular2;
 
 void main()
 {
-	// Output color = red
-	//color = ourColor;
-    //outCol = vec4(vsCol, 1.0);
-    outCol = mix(texture(ourTexture1, vsTex), texture(ourTexture2, vsTex), 0.2) * ourColor;
+    //outCol = mix(texture(ourTexture1, vsTex), texture(ourTexture2, vsTex), 0.2) * ourColor;
+    outCol = texture(texture_diffuse1, vsTex); 
 }
