@@ -37,11 +37,11 @@ class Texture {
          *
          * @param[in] path          - texture file path
          * @param[in] pixelDataFormat TODO should I remove this? is this determined by nrChannels?
-         * @param[in] unit          - texture unit 
+         * @param[in] type          - texture type, save as string 
          * ******************************************************
         **/
-        Texture(const char* path, uint32_t pixelDataFormat, uint32_t unit) :
-            path_(path), pixelDataFormat_(pixelDataFormat), unit_(unit)
+        Texture(const char* path, uint32_t pixelDataFormat, std::string type) :
+            path_(path), pixelDataFormat_(pixelDataFormat), type_(type)
         {
             createTexture(path_.c_str());
         }
@@ -53,7 +53,7 @@ class Texture {
         **/
         ~Texture()
         {
-            stbi_image_free(data_);
+            //stbi_image_free(data_);       // TODO this proved to be a bad idea already a few times now
             //glDeleteTextures(1, &handler_); // TODO If this stays, textures need to be global
         }
 
@@ -70,7 +70,7 @@ class Texture {
                 exit(1);
             }
             /* Bind textures */
-            //glActiveTexture(GL_TEXTURE0 + unit); // activate the texture unit first before binding texture
+            glActiveTexture(GL_TEXTURE0 + unit);
             glBindTexture(GL_TEXTURE_2D, handler_);
         }
 
@@ -80,6 +80,8 @@ class Texture {
          * ******************************************************
         **/
         uint32_t getHandler() { return handler_; }
+        std::string getType() { return type_; }
+        const char* getTypeCstr() { return type_.c_str(); }
 
     private: /* Methods */
         /**
@@ -93,7 +95,7 @@ class Texture {
         {
             /* Generate textures */
             glGenTextures(1 /* Generate one texture */, &handler_);
-            bind(unit_);
+            glBindTexture(GL_TEXTURE_2D, handler_);
 
             /* Set texture wraping parameters */
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -124,10 +126,10 @@ class Texture {
                         GL_UNSIGNED_BYTE,   // Data type of pixel data
                         data_);             // Pointer to binary image
                 glGenerateMipmap(GL_TEXTURE_2D);
-                //stbi_image_free(data_); // TODO Free here or in destr?
+                stbi_image_free(data_); // Freeing here proved safer than in destr.
             } else {
                 LOG(L_ERR, "Could not open texture: %s!", path);
-                //stbi_image_free(data_); // TODO Free here or in destr?
+                stbi_image_free(data_); // Freeing here proved safer than in destr.
             }
         }
 
@@ -136,7 +138,7 @@ class Texture {
         uint8_t         *data_;             /* Binary image data */
         uint32_t        handler_;           /* Texture handler */
         uint32_t        pixelDataFormat_;   /* Pixel data format */
-        uint32_t        unit_;
+        std::string     type_;              /* Texture type */
 };
 
 /**

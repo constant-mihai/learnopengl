@@ -32,13 +32,6 @@ struct Vertex {
     glm::vec2 texCoords_;
 };
 
-struct TextureDescr {
-    uint32_t id_;
-    std::string type_;
-    std::string path_;
-};
-
-
 /**
  * ******************************************************
  * Mesh class
@@ -59,7 +52,7 @@ class Mesh {
         **/
         Mesh(std::vector<Vertex> vertices, 
                 std::vector<unsigned int> indices,
-                std::vector<TextureDescr> textures, 
+                std::vector<Texture*> textures, 
                 uint32_t drawType, 
                 std::vector<float> data) :
             vertices_(vertices),
@@ -75,8 +68,6 @@ class Mesh {
             //EBO_.hexDump();
             /* Positions */
 
-            int retCmp = memcmp(data.data(), vertices_.data(), vertices_.size()*sizeof(Vertex));
-            LOG(L_ERR, "============================================================ CMP = %d", retCmp);
             VAO_.attribPointer(3, sizeof(Vertex), 0);
             VAO_.attribPointer(3, sizeof(Vertex), offsetof(Vertex, normal_));
             VAO_.attribPointer(2, sizeof(Vertex), offsetof(Vertex, texCoords_));
@@ -96,23 +87,24 @@ class Mesh {
         **/
         void draw(Program & program)
         {
-			unsigned int diffuseNr = 1;
-			unsigned int specularNr = 1;
-			for(unsigned int i = 0; i < textures_.size(); i++)
-			{
-				glActiveTexture(GL_TEXTURE0 + i); // activate proper texture unit before binding
-				// retrieve texture number (the N in diffuse_textureN)
+            unsigned int diffuseNr = 1;
+            unsigned int specularNr = 1;
+            for(unsigned int i = 0; i < textures_.size(); i++)
+            {
+                glActiveTexture(GL_TEXTURE0 + i); // activate proper texture unit before binding
+                // retrieve texture number (the N in diffuse_textureN)
                 std::string number;
-                std::string name = textures_[i].type_;
-				if(name == "texture_diffuse")
-					number = std::to_string(diffuseNr++);
-				else if(name == "texture_specular")
-					number = std::to_string(specularNr++);
+                const char* name = textures_[i]->getTypeCstr();
 
-				program.setInt((name + number).c_str(), i);
-				glBindTexture(GL_TEXTURE_2D, textures_[i].id_);
-			}
-			glActiveTexture(GL_TEXTURE0);
+                //TODO Don't like this very much. I will alloc mem and concat strings on every draw
+                if      (strcmp(name, "texture_diffuse") == 0)      number = std::to_string(diffuseNr++);
+                else if (strcmp(name, "texture_specular") == 0 )    number = std::to_string(specularNr++);
+
+                std::string uniformName = (number.insert(0, name));
+                program.setInt(uniformName.c_str(), i);
+                glBindTexture(GL_TEXTURE_2D, textures_[i]->getHandler());
+            }
+            glActiveTexture(GL_TEXTURE0);
 
             glBindVertexArray(VAO_.getHandler());
             glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
@@ -123,7 +115,7 @@ class Mesh {
         /*  Mesh Data  */
         std::vector<Vertex> vertices_;
         std::vector<unsigned int> indices_;
-        std::vector<TextureDescr> textures_;
+        std::vector<Texture*> textures_;         /* Textures, TODO somewhat faster with uptrs */
 
         uint32_t drawType_;
 

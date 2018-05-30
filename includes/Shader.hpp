@@ -105,7 +105,7 @@ class Shader {
             int32_t iLogLen = 0;
 
             glGetShaderiv(handler_, GL_COMPILE_STATUS, &success);
-	        glGetShaderiv(handler_, GL_INFO_LOG_LENGTH, &iLogLen);
+            glGetShaderiv(handler_, GL_INFO_LOG_LENGTH, &iLogLen);
             
             if (iLogLen < 0) {
                 LOG(L_ERR, "Log len cannot be negative");
