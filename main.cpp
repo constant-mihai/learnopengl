@@ -213,7 +213,8 @@ int main( void )
     createGrid(gridVA);
 
     /* Load a new model */
-    Model *nanosuit = loadModel();
+    //Model *nanosuit = loadModel();
+    TinyObjModel starDestr;
 
     /* Compile shaders and link program */
     Shader vShader("/store/Code/cpp/learnopengl/shaders/SimpleVertexShader.vs", GL_VERTEX_SHADER); 
@@ -280,7 +281,8 @@ int main( void )
         /* Run GLSL program */
         program.use();
         program.setFloat("ourColor", (sin(time)/2.0f) + 0.5f);
-        nanosuit->draw(program);
+        //nanosuit->draw(program);
+        starDestr.draw(program);
         
         /* Bind and draw*/
         glBindVertexArray(vertexArray.getHandler());   

@@ -124,6 +124,7 @@ include_dirs := /usr/include/GL \
 	/usr/include/glm \
 	/usr/include/GLFW \
 	/store/Code/cpp/stb/ \
+	/store/Code/cpp/tinyobjloader/ \
 	/store/Code/cpp/assimp/include/ \
 
 project_library_subdir := common

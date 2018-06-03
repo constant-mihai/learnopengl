@@ -43,6 +43,12 @@ class Texture {
         Texture(const char* path, uint32_t pixelDataFormat, std::string type) :
             path_(path), pixelDataFormat_(pixelDataFormat), type_(type)
         {
+            if (type_.empty()) {
+                LOG(L_CRIT, "Texture needs a name.");
+                exit(1);
+            }
+
+            LOG(L_DBG, "Pixel Data Format: %d, %s", pixelDataFormat_, type_.c_str());
             createTexture(path_.c_str());
         }
 

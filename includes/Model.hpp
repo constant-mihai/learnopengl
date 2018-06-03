@@ -252,56 +252,136 @@ class Model
         std::unordered_map<std::string, Texture*> loadedTextures; //TODO consider a shared_ptr here
 };
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
 
-#if 0
-        //THROW AWAY
- 
+/**
+ * ******************************************************
+ * Model loader using tinyobjloader
+ * ******************************************************
+**/
+class TinyObjModel {
+    public: /* Constructors */
         /**
          * ******************************************************
-         * TODO Doc this
+         * TODO DOCTHIS
          * ******************************************************
         **/
-        unsigned int TextureFromFile(const char *path, const std::string &directory)
-        {
-            std::string filename = std::string(path);
-            filename = directory + '/' + filename;
-
-            unsigned int textureID;
-            glGenTextures(1, &textureID);
-
-            int width, height, nrComponents;
-            unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
-            if (data)
-            {
-                GLenum format;
-                if (nrComponents == 1)
-                    format = GL_RED;
-                else if (nrComponents == 3)
-                    format = GL_RGB;
-                else if (nrComponents == 4)
-                    format = GL_RGBA;
-
-                glBindTexture(GL_TEXTURE_2D, textureID);
-                glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-                glGenerateMipmap(GL_TEXTURE_2D);
-
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-                stbi_image_free(data);
-            }
-            else
-            {
-                std::cout << "Texture failed to load at path: " << path << std::endl;
-                stbi_image_free(data);
-            }
-
-            return textureID;
+        TinyObjModel() {
+            loadModel();
         }
-#endif
+    private: /* Methods */
 
+        /**
+         * ******************************************************
+         * TODO DOC THIS
+         * ******************************************************
+        **/
+        void loadModel() {
+            //std::string MODEL_PATH = "/store/Code/cpp/learnopengl/models/star_cruiser/scene.gltf";
+            std::string MODEL_PATH ="/store/Code/cpp/learnopengl/models/nanosuit.obj"; 
+            std::string MATERIAL_BASE_DIR ="/store/Code/cpp/learnopengl/models/"; 
+			if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, 
+                        MODEL_PATH.c_str(), MATERIAL_BASE_DIR.c_str())) {
+                LOG(L_CRIT, "Error Loading model: %s", MODEL_PATH.c_str());
+                exit(1);
+			}
+            LOG(L_CRIT, "TOL ERROR: %s.", err.c_str());
+
+            std::vector<float> data; // TODO TEMP rm this
+            for (const auto& shape : shapes) {
+                for (const auto& index : shape.mesh.indices) {
+                    Vertex vertex = {};
+                    vertex.pos_ = {
+                        attrib.vertices[3 * index.vertex_index + 0],
+                        attrib.vertices[3 * index.vertex_index + 1],
+                        attrib.vertices[3 * index.vertex_index + 2]
+                    };
+
+                    vertex.texCoords_ = {
+                        attrib.texcoords[2 * index.texcoord_index + 0],
+                        attrib.texcoords[2 * index.texcoord_index + 1]
+                    };
+
+                    vertex.normal_ = {1.0f, 1.0f, 1.0f};
+
+                    vertex.texCoords_ = {
+                        attrib.texcoords[2 * index.texcoord_index + 0],
+                        1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+                    };
+
+                    vertices.push_back(vertex);
+                    indices.push_back(indices.size());
+
+                }
+
+                LOG(L_DBG, "Shape: %s", shape.name.c_str());
+                for(uint32_t m=0; m<shape.mesh.material_ids.size(); m++) {
+                    LOG(L_DBG, "Shape Material: %s", materials[m].name.c_str());
+                }
+
+                std::string fullTexPath;
+                Texture * texture = NULL;
+                //for (uint32_t i=0; i<shap.mesh.material_ids.size() - 1; i++) {
+                for (uint32_t i=0; i<materials.size(); i++) {
+                    //if (materials[i].name.empty()) continue;
+                    LOG(L_DBG, "Material: %s", materials[i].name.c_str());
+                    LOG(L_DBG, "Material Texture file: %s", materials[i].diffuse_texname.c_str());
+
+                    /* Diffuse */
+                    if (!materials[i].diffuse_texname.empty()) {
+                        fullTexPath = MATERIAL_BASE_DIR + materials[i].diffuse_texname;
+                        texture = new Texture(fullTexPath.c_str(), GL_RGB, "texture_diffuse");
+                        meshTextures.push_back(texture);
+                    }
+
+                    /* Specular */
+                    if (!materials[i].specular_texname.empty()) {
+                        fullTexPath = MATERIAL_BASE_DIR + materials[i].specular_texname;
+                        texture = new Texture(fullTexPath.c_str(), GL_RGB, "texture_specular");
+                        meshTextures.push_back(texture);
+                    }
+
+                    /* Normal */
+                    if (!materials[i].normal_texname.empty()) {
+                        fullTexPath = MATERIAL_BASE_DIR + materials[i].normal_texname;
+                        texture = new Texture(fullTexPath.c_str(), GL_RGB, "texture_normal");
+                        meshTextures.push_back(texture);
+                    }
+
+                    //[> Height <] //TODO HEIGHT VS BUMP
+                    if (!materials[i].bump_texname.empty()) {
+                        fullTexPath = MATERIAL_BASE_DIR + materials[i].bump_texname;
+                        texture = new Texture(fullTexPath.c_str(), GL_RGB, "texture_height");
+                        meshTextures.push_back(texture);
+                    }
+
+                }
+                meshes.push_back(std::unique_ptr<Mesh>(new Mesh(vertices, indices, meshTextures, GL_STATIC_DRAW, data)));            
+            }
+        }
+    public: /* Methods */
+
+        /**
+         * ******************************************************
+         * TODO DOC THIS
+         * ******************************************************
+        **/
+        void draw(Program & program) {
+            for (uint32_t i = 0; i< meshes.size(); i++) {
+                meshes[i].get()->draw(program);
+            }
+        }
+    private: /* Members */
+			tinyobj::attrib_t attrib;
+			std::vector<tinyobj::shape_t> shapes;
+			std::vector<tinyobj::material_t> materials;
+			std::string err;
+            std::vector<Vertex> vertices;
+            std::vector<uint32_t> indices;
+            std::vector<std::unique_ptr<Mesh>> meshes;
+            std::vector<Texture*> meshTextures;
+};
 
 
 #endif
