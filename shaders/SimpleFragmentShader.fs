@@ -45,5 +45,5 @@ void main()
     vec3 result = (ambient + diffuseColor + specular) * objectColor;
     outCol = vec4(result, 1.0);
     //outCol = mix(texture(ourTexture1, vsTex), texture(ourTexture2, vsTex), 0.2) * ourColor;
-    //outCol = texture(texture_diffuse1, vsTex); 
+    outCol = texture(texture_diffuse1, vsTex) * outCol;
 }
