@@ -107,7 +107,7 @@ class Program {
          * @param value     - value to set
          * ******************************************************
         **/
-        void setMat4f(const char* name, float *value) const
+        void setMat4f(const char* name, const float *value) const
         { 
             glUniformMatrix4fv(
                     glGetUniformLocation(id_, name), 

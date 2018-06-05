@@ -247,7 +247,9 @@ int main( void )
     glfwSetInputMode(uptrWindow.get()->getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowUserPointer(uptrWindow.get()->getWindow(), (void*)&up); //TODO is this thread safe?
 
-    glm::mat4 mvp = camera.getViewProjection() * model.getModelRef();
+    glm::mat4 view = camera.getView();
+    glm::mat4 mov = camera.getView() * model.getModelRef();
+    glm::mat4 mvp = camera.getProjection() * mov;
 
     /* Load texture */
     Texture crate("/store/Code/cpp/learnopengl/img/textures/container.png", GL_RGB, "texture_diffuse1");
@@ -271,13 +273,29 @@ int main( void )
         uptrWindow.get()->processInput(deltaTime, camera);
 
         /* Set the model-view-projection */
-        mvp = camera.getViewProjection() * model.getModelRef();
+        view = camera.getView();
+        mov = camera.getView() * model.getModelRef();
+        mvp = camera.getProjection() * mov;
 
         /* Run object model program */
         program.use();
-        program.setMat4f("transform", &mvp[0][0]);
+        program.setMat4f("model", &(model.getModelRef()[0][0]));
+        program.setMat4f("view", &view[0][0]);
+        program.setMat4f("mov", &mov[0][0]);
+        program.setMat4f("mvp", &mvp[0][0]);
         program.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
         program.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+            camX = sin(time) * radius;
+            camZ = cos(time) * radius;
+        program.setVec3("u_lightPos", camX, 0, camZ);
+        //program.setVec3("viewPos", camera.getPos());
+        program.setVec3("viewPos", glm::vec3(0,0,0));
+        /* Transform the Normal vectors 
+         * Applying the Model-View to normals is not as straight-forward.
+         * Since Un-uniform sclaing would result in morphed normals */
+        glm::mat4 inversedMov = glm::inverse(mov);
+        glm::mat4 transposedInversedMov = glm::transpose(inversedMov);
+        program.setMat4f("transposedInversedMov", &transposedInversedMov[0][0]);
 
         /* Clear */
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -287,7 +305,7 @@ int main( void )
         
         /* Use the lighting */
         lightSource.use();
-        lightSource.setMat4f("transform", &mvp[0][0]);
+        lightSource.setMat4f("mvp", &mvp[0][0]);
         glActiveTexture(GL_TEXTURE0); 
         lightSource.setInt("ourTexture", 0);
 

@@ -45,16 +45,6 @@ class Camera {
 
         /**
          * ******************************************************
-         * TODO doc this
-         * ******************************************************
-        **/
-        glm::mat4 getViewProjection() const
-        {
-            return projection_ * glm::lookAt(pos_, direction_, up_);
-        }
-
-        /**
-         * ******************************************************
          * Fix the camera direction. The camera will point to a 
          * fix point in space.
          * ******************************************************
@@ -93,6 +83,12 @@ class Camera {
         glm::vec3 getUp() { return up_; }
         glm::vec3 getXAxis() { return glm::normalize(glm::cross(forward_, up_)); }
         glm::mat4 getProjection() { return projection_; }
+        glm::mat4 getView() { return glm::lookAt(pos_, direction_, up_); }
+        glm::mat4 getViewProjection() const
+        {
+            return projection_ * glm::lookAt(pos_, direction_, up_);
+        }
+
         float getSpeed() { return speed_; }
 
         /**

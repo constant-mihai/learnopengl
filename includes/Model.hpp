@@ -40,11 +40,21 @@
 class Model 
 {
     public: /* Constructors */
+        /**
+         * ******************************************************
+         * TODO DOC THIS
+         * ******************************************************
+        **/
         Model(char *path, uint32_t drawType)
         {
             loadModel(path, drawType);
         }
 
+        /**
+         * ******************************************************
+         * TODO DOC THIS
+         * ******************************************************
+        **/
         void draw(Program & program)
         {
             for (uint32_t i = 0; i< meshes.size(); i++) {
