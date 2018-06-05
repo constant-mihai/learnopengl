@@ -115,11 +115,23 @@ void createBuffer(VertexArray &vertexArray) {
     glBindVertexArray(0);
 }
 
-void spin() {
+/**
+ * ******************************************************
+ * Spin around it's axis and rotate around a point
+ * ******************************************************
+**/
+
+void spin_rotate() {
     //Transform spin(0, 0.1f, glm::vec3(0, 0, 35));
     //Transform trns( glm::vec3(0.25f, 0, 0), glm::vec3(1, 1, 1), glm::vec3(0, 0, 0));
     //Transform orbit(0, 1, glm::vec3(0, 0, 5));
     //program.setMat4f("transform", (float*)spin.getModelFloat());
+    //
+    // Rotate camera
+    //camX = sin(time) * radius;
+    //camZ = cos(time) * radius;
+    //mvp = camera.move(glm::vec3(camX, 0, camZ)) * model.getModelRef();
+    //program.setMat4f("transform", &mvp[0][0]);
 }
 
 /**
@@ -127,7 +139,7 @@ void spin() {
  * Create world axes
  * ******************************************************
 **/
-void createWorldAxes(VertexArray& waVA) {
+void createWorldAxes(VertexArray& VAO_worldAxes) {
     float vertices[] = {
         0, 0, 0,    1, 0, 0,
         0, 0, 0,    0, 1, 0,
@@ -139,8 +151,8 @@ void createWorldAxes(VertexArray& waVA) {
     vbo.hexDump();
 
     /* Formating attributes */
-    waVA.attribPointer(3, 3* sizeof(float), 0);
-    waVA.enableAllAttribArrays();
+    VAO_worldAxes.attribPointer(3, 3* sizeof(float), 0);
+    VAO_worldAxes.enableAllAttribArrays();
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -151,7 +163,7 @@ void createWorldAxes(VertexArray& waVA) {
  * Create xz plane grid
  * ******************************************************
 **/
-void createGrid(VertexArray& gridVA) {
+void createGrid(VertexArray& VAO_grid) {
     float vertices[300];
     for (int i=0;i<100;i++) {
         vertices[i]=i;      /* x = i */
@@ -201,54 +213,45 @@ int main( void )
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
     /* Create VAO */
-    VertexArray vertexArray;
+    VertexArray VAO_crate;
 
     /* This will identify our vertex buffer */
-    createBuffer(vertexArray);
+    createBuffer(VAO_crate);
 
-    VertexArray waVA;
-    createWorldAxes(waVA);
+    VertexArray VAO_worldAxes;
+    createWorldAxes(VAO_worldAxes);
 
-    VertexArray gridVA;
-    createGrid(gridVA);
+    VertexArray VAO_grid;
+    createGrid(VAO_grid);
 
     /* Load a new model */
-    //Model *nanosuit = loadModel();
-    TinyObjModel starDestr;
+    Model *nanosuit = loadModel();
 
     /* Compile shaders and link program */
     Shader vShader("/store/Code/cpp/learnopengl/shaders/SimpleVertexShader.vs", GL_VERTEX_SHADER); 
-    Shader fShader("/store/Code/cpp/learnopengl/shaders/SimpleFragmentShader.fs", GL_FRAGMENT_SHADER); 
+    Shader fShader("/store/Code/cpp/learnopengl/shaders/SimpleFragmentShader.fs", GL_FRAGMENT_SHADER);
     Program program(vShader.getHandler(), fShader.getHandler());
-    program.use();
 
+    /* Light Source program */
+    Shader vLightSource("/store/Code/cpp/learnopengl/shaders/lightSource.vs", GL_VERTEX_SHADER); 
+    Shader fLightSource("/store/Code/cpp/learnopengl/shaders/lightSource.fs", GL_FRAGMENT_SHADER); 
+    Program lightSource(vLightSource.getHandler(), fLightSource.getHandler());
+
+    /* Camera */
     Camera camera(glm::vec3(0, 0, 1.0f), 70.0f, ASPECT_RATIO, 0.01f, 1000.0f);
 
     /* Transform */
     Transform model(glm::vec3(0, 0, -1.0f), glm::vec3(1, 1, 1), glm::vec3(0.0f, 0, 0));
-    //glm::mat4 projection;
-    //projection = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH/WINDOW_HEIGHT, 0.1f, 100.0f);
-    //glm::mat4 respm = projection * glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-    //respm = respm * *(model.getModel());
-    //program.setMat4f("transform", &respm[0][0]);
-    //
+
     UserPointer up = { &camera, -90.0f, 0.0f, 800.0f / 2.0, 600.0f / 2.0f,  70.0f, true};
     glfwSetInputMode(uptrWindow.get()->getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowUserPointer(uptrWindow.get()->getWindow(), (void*)&up); //TODO is this thread safe?
 
-
     glm::mat4 mvp = camera.getViewProjection() * model.getModelRef();
-    program.setMat4f("transform", &mvp[0][0]);
 
     /* Load texture */
-    //Texture crate("/store/Code/cpp/learnopengl/img/textures/container.png", GL_RGB, 0);
+    Texture crate("/store/Code/cpp/learnopengl/img/textures/container.png", GL_RGB, "texture_diffuse1");
     //Texture smile("/store/Code/cpp/learnopengl/img/textures/awesomeface.png", GL_RGBA, 1);
-
-    /* We need to tell GLSL which texture is where */
-    uint32_t texLoc = glGetUniformLocation(program.getId(), "ourTexture1");
-    glUniform1i(texLoc, 0);
-    /* Or like this */
-    program.setInt("ourTexture2", 1);
 
     double time = 0, deltaTime = 0, lastFrame = 0;//, rotateTime = glfwGetTime();
     glm::mat4 res(1.0f);
@@ -266,28 +269,34 @@ int main( void )
 
         /* Input */
         uptrWindow.get()->processInput(deltaTime, camera);
+
+        /* Set the model-view-projection */
         mvp = camera.getViewProjection() * model.getModelRef();
+
+        /* Run object model program */
+        program.use();
         program.setMat4f("transform", &mvp[0][0]);
+        program.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+        program.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 
         /* Clear */
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-        // Rotate camera
-        //camX = sin(time) * radius;
-        //camZ = cos(time) * radius;
-        //mvp = camera.move(glm::vec3(camX, 0, camZ)) * model.getModelRef();
-        //program.setMat4f("transform", &mvp[0][0]);
-
-        /* Run GLSL program */
-        program.use();
-        program.setFloat("ourColor", (sin(time)/2.0f) + 0.5f);
-        //nanosuit->draw(program);
-        starDestr.draw(program);
+        /* Draw models */
+        nanosuit->draw(program);
         
-        /* Bind and draw*/
-        glBindVertexArray(vertexArray.getHandler());   
+        /* Use the lighting */
+        lightSource.use();
+        lightSource.setMat4f("transform", &mvp[0][0]);
+        glActiveTexture(GL_TEXTURE0); 
+        lightSource.setInt("ourTexture", 0);
+
+        /* Bind and draw crate */
+        glBindTexture(GL_TEXTURE_2D, crate.getHandler());
+        glBindVertexArray(VAO_crate.getHandler());   
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(waVA.getHandler());
+
+        glBindVertexArray(VAO_worldAxes.getHandler());
         glDrawArrays(GL_LINES, 0, 18);
 
         /* Swap buffers */

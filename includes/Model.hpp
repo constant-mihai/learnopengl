@@ -257,7 +257,7 @@ class Model
 
 /**
  * ******************************************************
- * Model loader using tinyobjloader
+ * Model loader using tinyobjloader TODO doesn't work atm
  * ******************************************************
 **/
 class TinyObjModel {
