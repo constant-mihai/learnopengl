@@ -4,46 +4,110 @@
 out vec4 outCol;
 
 // Input data
-in vec3 vsCol;
-in vec2 vsTex;
-in vec3 FragPos;
-in vec3 lightPos;
+in vec3 in_normal;
+in vec2 in_tex;
+in vec3 in_fragPos;
+in vec3 in_lightPos;
 
-uniform vec3 lightColor;
 uniform vec3 objectColor;
 uniform vec3 viewPos;
 
 uniform float ourColor;
-uniform sampler2D texture_diffuse1;
-uniform sampler2D texture_diffuse2;
-uniform sampler2D texture_diffuse3;
-uniform sampler2D texture_specular1;
-uniform sampler2D texture_specular2;
 
-void main()
-{
-    float ambientStrength = 0.1;
-    vec3 ambient = ambientStrength * lightColor;
+struct Material {
+    sampler2D ambient;
+    sampler2D diffuse1;
+    sampler2D diffuse2;
+    sampler2D diffuse3;
+    sampler2D specular1;
+    sampler2D specular2;
+    float shininess;
+};
 
-    vec3 normal_MV = normalize(vsCol);
-    vec3 lightDir = normalize(lightPos - FragPos);
+struct DirectionalLight {
+    vec3 direction;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
 
+struct Light {
+    vec3 position;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+
+    float constant;
+    float linear;
+    float quadratic;
+};
+
+uniform Material material;
+uniform Light light;
+
+float calculateSpotLightAttenuation(vec3 lightPos, float lightConst, float lightLinear, float lightQuadr, vec3 objPos) {
+    float distance = length(lightPos - objPos);
+    return (1.0 / (lightConst + lightLinear * distance + 
+                            lightQuadr * (distance * distance)));
+}
+
+/**
+ * ******************************************************
+ * Calculate Diffuse
+ * TODO DOC THIS
+ * ******************************************************
+**/
+vec3 calculateDiffuse(vec3 normal_MV, vec3 lightDir, vec3 lightDiffuse, sampler2D materialDiffuse) {
     /* Diffuse impact. Dot product */
     float diff = max(dot(normal_MV, lightDir), 0.0);
-    /* Multiply by lights color */
-    vec3 diffuseColor = diff * lightColor; 
+    return (lightDiffuse * (diff * vec3(texture(materialDiffuse, in_tex))));
+}
 
-    /* Specular */
-    float specularStrength = 0.5;
+/**
+ * ******************************************************
+ * Calculate Specular
+ * TODO DOC THIS
+ * ******************************************************
+**/
+vec3 calculateSpecular(vec3 normal_MV, vec3 viewDir, vec3 lightDir, vec3 lightSpecular, sampler2D materialSpecular, float materialShininess) {
     // the viewer is always at (0,0,0) in view-space, 
     // in that case the viewDir is (0,0,0) - Position => -Position
-    vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, normal_MV);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    vec3 specular = specularStrength * spec * lightColor;
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), materialShininess);
+    return (lightSpecular * (spec * vec3(texture(materialSpecular, in_tex))));
+}
 
-    vec3 result = (ambient + diffuseColor + specular) * objectColor;
+/**
+ * ******************************************************
+ * Main 
+ * ******************************************************
+**/
+void main()
+{
+    //light.position = in_lightPos; // TODO where is the light position? Should it be mvp?
+    float attenuation = calculateSpotLightAttenuation(
+            light.position, light.constant, 
+            light.linear, light.quadratic, in_fragPos);
+
+    /* Setting material */
+    vec3 ambient = light.ambient * vec3(texture(material.ambient, in_tex));
+    //ambient *= attenuation;
+
+    /* Normalization */
+    vec3 normal_MV = normalize(in_normal);
+    vec3 lightDir = normalize(in_lightPos - in_fragPos);
+    vec3 viewDir = normalize(viewPos - in_fragPos);
+
+    /* Diffuse */
+    vec3 diffuseColor = calculateDiffuse(normal_MV, lightDir, light.diffuse, material.diffuse1);
+    //diffuseColor *= attenuation;
+
+    /* Specular */
+    vec3 specular = calculateSpecular(normal_MV, viewDir, lightDir, light.specular, material.specular1, material.shininess);
+    //specular *= attenuation;
+
+    vec3 result = (ambient + diffuseColor + specular);// * objectColor;
     outCol = vec4(result, 1.0);
-    //outCol = mix(texture(ourTexture1, vsTex), texture(ourTexture2, vsTex), 0.2) * ourColor;
-    outCol = texture(texture_diffuse1, vsTex) * outCol;
+    //outCol = mix(texture(ourTexture1, in_tex), texture(ourTexture2, in_tex), 0.2) * ourColor;
+    //outCol = texture(texture_diffuse1, in_tex) * outCol;
 }

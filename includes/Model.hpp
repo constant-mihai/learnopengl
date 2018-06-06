@@ -204,19 +204,51 @@ class Model
 
             std::vector<Texture*> meshTextures;
             // 1. diffuse maps
-            loadMaterialTextures(loadedTextures, meshTextures, material, aiTextureType_DIFFUSE, "texture_diffuse");
+            loadMaterialTextures(loadedTextures, meshTextures, material, aiTextureType_DIFFUSE);
 
             // 2. specular maps
-            loadMaterialTextures(loadedTextures, meshTextures, material, aiTextureType_SPECULAR, "texture_specular");
+            loadMaterialTextures(loadedTextures, meshTextures, material, aiTextureType_SPECULAR);
 
             // 3. normal maps 
-            loadMaterialTextures(loadedTextures, meshTextures, material, aiTextureType_NORMALS, "texture_normal");
+            loadMaterialTextures(loadedTextures, meshTextures, material, aiTextureType_NORMALS);
 
             // 4. height maps
-            loadMaterialTextures(loadedTextures, meshTextures, material, aiTextureType_HEIGHT, "texture_height");
+            loadMaterialTextures(loadedTextures, meshTextures, material, aiTextureType_HEIGHT);
             
             // return a mesh object created from the extracted mesh data
             return new Mesh(vertices, indices, meshTextures, drawType, data);
+        }
+
+        /**
+         * ******************************************************
+         * Get the texture type name
+         * ******************************************************
+        **/
+        const char* getTypeName(aiTextureType type) {
+            static const struct textureType2Name { 
+                aiTextureType t;
+                const char* str;
+            } p[] = {
+                {aiTextureType_DIFFUSE , "diffuse"},
+                {aiTextureType_SPECULAR, "specular"},
+                {aiTextureType_AMBIENT, "ambient"},
+                {aiTextureType_EMISSIVE, "emissive"},
+                {aiTextureType_HEIGHT, "height"},
+                {aiTextureType_NORMALS, "normals"},
+                {aiTextureType_SHININESS, "shininess"},
+                {aiTextureType_OPACITY, "opacity"},
+                {aiTextureType_DISPLACEMENT, "displacement"},
+                {aiTextureType_LIGHTMAP, "lightmap"},
+                {aiTextureType_REFLECTION, "reflection"},
+                {aiTextureType_NONE,0}
+            };
+
+            int i = 0;
+            while (p[i].t != 0 && p[i].str != 0) {
+                if (p[i].t == type) return p[i].str;
+                i++;
+            }
+            return "Unkown type of shader!";
         }
 
         /**
@@ -226,8 +258,7 @@ class Model
         **/
         void loadMaterialTextures(std::unordered_map<std::string, Texture*> & loadedTextures,
                 std::vector<Texture*> & meshTextures,
-                aiMaterial *mat, aiTextureType type, 
-                std::string typeName)
+                aiMaterial *mat, aiTextureType type)
         {
             unsigned int i = 0;
             for( i= 0; i < mat->GetTextureCount(type); i++)
@@ -240,7 +271,7 @@ class Model
 
                 /* Check if the texture was ever loaded */
                 if (loadedTextures.find(path) == loadedTextures.end()) {
-                    Texture *texture = new Texture(path.c_str(), GL_RGB, typeName);
+                    Texture *texture = new Texture(path.c_str(), GL_RGB, getTypeName(type));
                     //TODO this can be done better than indexing with 100 character strings.
                     if (texture == NULL) {
                         LOG(L_CRIT, "Missing texture: %s", path.c_str());

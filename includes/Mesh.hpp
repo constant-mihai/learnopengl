@@ -97,10 +97,13 @@ class Mesh {
                 const char* name = textures_[i]->getTypeCstr();
 
                 //TODO Don't like this very much. I will alloc mem and concat strings on every draw
-                if      (strcmp(name, "texture_diffuse") == 0)      number = std::to_string(diffuseNr++);
-                else if (strcmp(name, "texture_specular") == 0 )    number = std::to_string(specularNr++);
+                //TODO Also, don't understand what's up with multiple textures of the same type
+                if      (strcmp(name, "diffuse") == 0)      number = std::to_string(diffuseNr++);
+                else if (strcmp(name, "specular") == 0)     number = std::to_string(specularNr++);
 
-                std::string uniformName = (number.insert(0, name));
+                std::string uniformName = "material.";
+                uniformName += name;
+                uniformName += number;
                 program.setInt(uniformName.c_str(), i);
                 glBindTexture(GL_TEXTURE_2D, textures_[i]->getHandler());
             }

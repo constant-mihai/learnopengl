@@ -284,12 +284,19 @@ int main( void )
         program.setMat4f("mov", &mov[0][0]);
         program.setMat4f("mvp", &mvp[0][0]);
         program.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-        program.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
             camX = sin(time) * radius;
             camZ = cos(time) * radius;
         program.setVec3("u_lightPos", camX, 0, camZ);
-        //program.setVec3("viewPos", camera.getPos());
-        program.setVec3("viewPos", glm::vec3(0,0,0));
+        program.setVec3("light.ambient",  0.123f, 0.123f, 0.123f);
+        program.setVec3("light.diffuse",  1.5f, 1.5f, 1.5f); // darken the light a bit to fit the scene
+        program.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+        program.setFloat("light.constant", 1.0f);
+        program.setFloat("light.linear", 0.9f);
+        program.setFloat("light.quadratic", 0.032f);
+        //program.setVec3("viewPos", camera.getPos()); /* Calculate the specular light in world space */
+        program.setVec3("viewPos", glm::vec3(0,0,0)); /* Calculate the specular light in view-space */
+        program.setFloat("material.shininess", 32.0f);
+
         /* Transform the Normal vectors 
          * Applying the Model-View to normals is not as straight-forward.
          * Since Un-uniform sclaing would result in morphed normals */

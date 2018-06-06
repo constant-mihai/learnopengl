@@ -43,21 +43,28 @@ class File {
         File(const char* path)
             : path_(path)
         {
-            char* buff = 0;
-
             if (path == NULL) 
             {
                 LOG(L_ERR, "Missing file path.");
                 exit(1);
             }
+        }
 
+        /**
+         * ******************************************************
+         * Returns read buffer
+         * ******************************************************
+        **/
+        const char* getBuff() {
             /* Open files */
+            char* buff = 0;
+
             FILE *stream = fopen(path_.c_str(), "r");
 
             if (stream == NULL) 
             {
                 char * serr = strerror(errno);
-                LOG(L_ERR, "Couldn't open file: %s, \n error: %s", path_.c_str(), serr);
+                LOG(L_CRIT, "Couldn't open file: %s, \n error: %s", path_.c_str(), serr);
                 exit(1);
             }
 
@@ -68,21 +75,37 @@ class File {
 
             /* Read files */
             buff = (char*) malloc(streamSize+1);
-            fread(buff, sizeof(char), streamSize, stream);
+            if (fread(buff, sizeof(char), streamSize, stream) == 0) {
+                /* EOF or error */
+                int32_t ferr = 0;
+                if (( ferr = ferror(stream)) != 0) {
+                    LOG(L_CRIT, "Error reading file: %s, %d", path_.c_str(), ferr);
+                    exit(1);
+                }
+            }
             buff[streamSize] = '\0';
             buff_.reset(buff);
 
             /* Close the streams */
             fclose(stream);
+            return (const char*) buff_.get();
         }
 
-        /**
-         * ******************************************************
-         * Returns read buffer
-         * ******************************************************
-        **/
-        const char* getBuff() {
-            return (const char*) buff_.get();
+        void append(const char* str, size_t size) {
+            FILE *stream = fopen(path_.c_str(), "a");
+
+            if (stream == NULL) 
+            {
+                char * serr = strerror(errno);
+                LOG(L_CRIT, "Couldn't open file: %s, \n error: %s", path_.c_str(), serr);
+                exit(1);
+            }
+
+            if (fwrite(str, sizeof(char), size, stream) == 0) {
+                LOG(L_CRIT, "Error appending in file: %s", path_.c_str());
+                exit(1);
+            }
+            fclose(stream);
         }
 
     private:

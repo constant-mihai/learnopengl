@@ -11,6 +11,7 @@
 #include <sstream>
 #include <iostream>
 
+const char * SHADER_LOG = "/store/Code/cpp/learnopengl/shaders/log.shaders";
 /**
  * ******************************************************
  * @brief Shader class
@@ -27,10 +28,11 @@ class Shader {
          *
          * @param shader path 
          * @param shader type 
+         * @param shader log 
          * ******************************************************
          */
-        Shader(const char* path, uint32_t type)
-            : file_(path), type_(type)
+        Shader(const char* path, uint32_t type, const char* log = SHADER_LOG)
+            : file_(path), type_(type), log_(log) 
         {
             const char* buff = 0;
             /* Compile shaders */
@@ -75,7 +77,7 @@ class Shader {
          * ******************************************************
         **/
         const char* type2Str(uint32_t type) {
-            struct pair { 
+            static const struct shaderType2Str { 
                 uint32_t t;
                 const char* str;
             } p[] = {
@@ -99,8 +101,6 @@ class Shader {
         **/
         bool checkCompileErrors()
         {
-            const char* errmsg = "ERROR::SHADER_COMPILATION_ERROR for ";
-            const char* errsep = "\n -- --------------------------------------------------- -- \n";
             int32_t success = 0;
             int32_t iLogLen = 0;
 
@@ -116,7 +116,10 @@ class Shader {
             {
                 char * infoLog = (char*) malloc(iLogLen);
                 glGetShaderInfoLog(handler_, iLogLen, NULL, infoLog);
-                std::cout << errmsg << type2Str(type_) << "\n" << infoLog <<  errsep << std::endl;
+                //std::cout << errmsg_ << type2Str(type_) << "\n" << infoLog <<  errsep_ << std::endl;
+                std::string type = type2Str(type_);
+                std::string log = errmsg_ + type + "\n" + infoLog + errsep_ + "\n";
+                log_.append(log.c_str(), log.size());
                 free(infoLog);
                 return false;
             }
@@ -125,10 +128,14 @@ class Shader {
         }
 
     private:
-        File        file_;          /* Vertex file */
+        File        file_;          /* Shader file */
         bool        compiled_;      /* Whether it compiled successfully */
         uint32_t    handler_;       /* Shader handler */
         uint32_t    type_;          /* The shader type */
+        File        log_;           /* Log file */
+
+        const std::string errmsg_ = "ERROR::SHADER_COMPILATION_ERROR for ";
+        const std::string errsep_ = "\n -- --------------------------------------------------- -- \n";
 };
 
 
