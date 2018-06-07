@@ -85,7 +85,7 @@ float calculateLightAttenuation(Light source, vec3 objPos) {
  * (light color) and the material ambient (material color).
  * ******************************************************
 **/
-vec3 calculateAmbient(vec3 lightAmbient, vec3 materialAmbient, vec2 texPos) {
+vec3 calculateAmbient(vec3 lightAmbient, sampler2D materialAmbient, vec2 texPos) {
     return (lightAmbient * vec3(texture(materialAmbient, texPos)));
 }
 
@@ -150,7 +150,8 @@ vec3 calculateDirectionalLight(DirectionalLight dl, Material material,
     vec3 lved /* light vector direction */ = normalize(-dl.direction);
 
     /* Ambient */
-    vec3 ambient = dl.ambient * vec3(texture(material.ambient, texPos));
+    //vec3 ambient = dl.ambient * vec3(texture(material.ambient, texPos));
+    vec3 ambient = calculateAmbient(dl.ambient, material.ambient, texPos);
 
     /* Diffuse */
     vec3 diffuse = calculateDiffuse(normal_MV, lved , dl.diffuse, material.diffuse1, texPos);
@@ -176,7 +177,8 @@ vec3 calculatePointLight(float attenuation, vec2 texPos,
     vec3 lved /* light vector direction */ = normalize(light.position - in_fragPos);
 
     /* Setting material */
-    vec3 ambient = light.ambient * vec3(texture(material.ambient, texPos));
+    //vec3 ambient = light.ambient * vec3(texture(material.ambient, texPos));
+    vec3 ambient = calculateAmbient(light.ambient, material.ambient, texPos);
     ambient *= attenuation;
 
     /* Diffuse */
@@ -240,6 +242,7 @@ void main()
     vec3 result = calculatePointLight(attenuation, in_tex,
                         normal_MV, viewDir,
                         light, material);
+    result *= objectColor; 
     /* Spotlight */
     result += calculateSpotlight(attenuation, normal_MV,
                    viewDir, in_tex, spotlight, material);
