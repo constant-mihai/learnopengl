@@ -238,7 +238,7 @@ int main( void )
     Program lightSource(vLightSource.getHandler(), fLightSource.getHandler());
 
     /* Camera */
-    Camera camera(glm::vec3(0, 0, 1.0f), 70.0f, ASPECT_RATIO, 0.01f, 1000.0f);
+    Camera camera(glm::vec3(0, 10, 10.0f), 70.0f, ASPECT_RATIO, 0.01f, 1000.0f);
 
     /* Transform */
     Transform model(glm::vec3(0, 0, -1.0f), glm::vec3(1, 1, 1), glm::vec3(0.0f, 0, 0));
@@ -250,6 +250,7 @@ int main( void )
     glm::mat4 view = camera.getView();
     glm::mat4 mov = camera.getView() * model.getModelRef();
     glm::mat4 mvp = camera.getProjection() * mov;
+    glm::mat4 vp = camera.getViewProjection();
 
     /* Load texture */
     Texture crate("/store/Code/cpp/learnopengl/img/textures/container.png", GL_RGB, "texture_diffuse1");
@@ -276,6 +277,7 @@ int main( void )
         view = camera.getView();
         mov = camera.getView() * model.getModelRef();
         mvp = camera.getProjection() * mov;
+        vp = camera.getViewProjection();
 
         /* Run object model program */
         program.use();
@@ -283,26 +285,47 @@ int main( void )
         program.setMat4f("view", &view[0][0]);
         program.setMat4f("mov", &mov[0][0]);
         program.setMat4f("mvp", &mvp[0][0]);
+        program.setMat4f("vp", &vp[0][0]);
         program.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
             camX = sin(time) * radius;
             camZ = cos(time) * radius;
-        program.setVec3("u_lightPos", camX, 0, camZ);
+
+        /* Directional Light */
+        program.setVec3("dirLight.direction", 0, -1, 0);
+        program.setVec3("dirLight.ambient",  0.123f, 0.123f, 0.123f);
+        program.setVec3("dirLight.diffuse",  1.5f, 1.5f, 1.5f); // darken the dirLight a bit to fit the scene
+        program.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
+
+        /* Light */
+        program.setVec3("light.position", camX, 14, camZ);
         program.setVec3("light.ambient",  0.123f, 0.123f, 0.123f);
         program.setVec3("light.diffuse",  1.5f, 1.5f, 1.5f); // darken the light a bit to fit the scene
         program.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
         program.setFloat("light.constant", 1.0f);
-        program.setFloat("light.linear", 0.9f);
-        program.setFloat("light.quadratic", 0.032f);
-        //program.setVec3("viewPos", camera.getPos()); /* Calculate the specular light in world space */
+        program.setFloat("light.linear", 0.045f);
+        program.setFloat("light.quadratic", 0.0075f);
+
+        /* Spotlight */
+        program.setVec3("spotlight.position", camera.getPos());
+        program.setVec3("spotlight.direction", camera.getForward());
+        program.setVec3("spotlight.diffuse",  1.5f, 1.5f, 1.5f);
+        program.setVec3("spotlight.specular", 1.0f, 1.0f, 1.0f);
+        program.setFloat("spotlight.cutOff", glm::cos(glm::radians(12.5f)));
+        program.setFloat("spotlight.outerCutOff", glm::cos(glm::radians(14.5f)));
+        program.setFloat("spotlight.constant", 1.0f);
+        program.setFloat("spotlight.linear", 0.045f);
+        program.setFloat("spotlight.quadratic", 0.0075f);
+
+
         program.setVec3("viewPos", glm::vec3(0,0,0)); /* Calculate the specular light in view-space */
         program.setFloat("material.shininess", 32.0f);
 
         /* Transform the Normal vectors 
          * Applying the Model-View to normals is not as straight-forward.
          * Since Un-uniform sclaing would result in morphed normals */
-        glm::mat4 inversedMov = glm::inverse(mov);
-        glm::mat4 transposedInversedMov = glm::transpose(inversedMov);
-        program.setMat4f("transposedInversedMov", &transposedInversedMov[0][0]);
+        glm::mat4 inversedModel = glm::inverse(model.getModelRef());
+        glm::mat4 transposedInversedModel  = glm::transpose(inversedModel);
+        program.setMat4f("transposedInversedModel", &transposedInversedModel[0][0]);
 
         /* Clear */
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);

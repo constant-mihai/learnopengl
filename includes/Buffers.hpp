@@ -47,7 +47,7 @@ class Buffer{
         Buffer(uint32_t bType, uint32_t dType, const T* data, size_t size):
             bType_(bType), dType_(dType), size_(size)
         {
-            LOG(L_INFO, "Allocating buffer %d, with size %ld.", bType, size_);
+            LOG(L_DBG, "Allocating buffer %d, with size %ld.", bType, size_);
             uptrData_.reset( (T*) malloc(size_) );
             memcpy(uptrData_.get(), data, size_);
             glGenBuffers(1 /* Generate one buffer */, &handler_);
@@ -109,7 +109,7 @@ class Buffer{
         **/
         void hexDump()
         {
-            LOG(L_INFO, "Buffer %d:", handler_);
+            LOG(L_DBG, "Buffer %d:", handler_);
             DumpHex(uptrData_.get(), size_, hexDumpMask_);
         }
 
@@ -170,7 +170,7 @@ class BufferFormat {
     public: /* Methods */
         void print()
         {
-            LOG(L_INFO, "Buffer Format:\n\
+            LOG(L_DBG, "Buffer Format:\n\
                     Size: %ld\n \
                     Type: %d\n \
                     Normalized: %d\n \
@@ -224,12 +224,12 @@ class VertexArray {
         **/
         void print() 
         {
-            LOG(L_INFO, "Vertex Array info:");
-            LOG(L_INFO, "\t handler: %d\n", handler_);
-            LOG(L_INFO, "Attribute pointers:\n");
+            LOG(L_DBG, "Vertex Array info:");
+            LOG(L_DBG, "\t handler: %d\n", handler_);
+            LOG(L_DBG, "Attribute pointers:\n");
             for (uint32_t i = 0; i<attrPtrs_.size(); ++i)
             {
-                LOG(L_INFO, "Index: %d", i);
+                LOG(L_DBG, "Index: %d", i);
                 attrPtrs_[i].print();
             }
         }

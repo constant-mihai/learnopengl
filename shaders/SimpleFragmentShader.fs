@@ -7,7 +7,6 @@ out vec4 outCol;
 in vec3 in_normal;
 in vec2 in_tex;
 in vec3 in_fragPos;
-in vec3 in_lightPos;
 
 uniform vec3 objectColor;
 uniform vec3 viewPos;
@@ -31,8 +30,24 @@ struct DirectionalLight {
     vec3 specular;
 };
 
+struct Spotlight {
+    vec3 position;
+    vec3 direction;
+
+    vec3 diffuse;
+    vec3 specular;
+
+    float cutOff;
+    float outerCutOff;
+
+    float constant;
+    float linear;
+    float quadratic;
+};
+
 struct Light {
     vec3 position;
+
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
@@ -43,12 +58,23 @@ struct Light {
 };
 
 uniform Material material;
+uniform DirectionalLight dirLight;
 uniform Light light;
+uniform Spotlight spotlight;
 
-float calculateSpotLightAttenuation(vec3 lightPos, float lightConst, float lightLinear, float lightQuadr, vec3 objPos) {
-    float distance = length(lightPos - objPos);
-    return (1.0 / (lightConst + lightLinear * distance + 
-                            lightQuadr * (distance * distance)));
+/**
+ * ******************************************************
+ * Calculate light attenuation.
+ * Light fades off with distance;
+ *
+ * @param light source
+ * @param the object position
+ * ******************************************************
+**/
+float calculateLightAttenuation(Light source, vec3 objPos) {
+    float distance = length(source.position - objPos);
+    return (1.0 / (source.constant + source.linear * distance + 
+                            source.quadratic * (distance * distance)));
 }
 
 /**
@@ -57,10 +83,10 @@ float calculateSpotLightAttenuation(vec3 lightPos, float lightConst, float light
  * TODO DOC THIS
  * ******************************************************
 **/
-vec3 calculateDiffuse(vec3 normal_MV, vec3 lightDir, vec3 lightDiffuse, sampler2D materialDiffuse) {
+vec3 calculateDiffuse(vec3 normal_MV, vec3 lightDir, vec3 lightDiffuse, sampler2D materialDiffuse, vec2 texPos) {
     /* Diffuse impact. Dot product */
     float diff = max(dot(normal_MV, lightDir), 0.0);
-    return (lightDiffuse * (diff * vec3(texture(materialDiffuse, in_tex))));
+    return (lightDiffuse * (diff * vec3(texture(materialDiffuse, texPos))));
 }
 
 /**
@@ -69,12 +95,95 @@ vec3 calculateDiffuse(vec3 normal_MV, vec3 lightDir, vec3 lightDiffuse, sampler2
  * TODO DOC THIS
  * ******************************************************
 **/
-vec3 calculateSpecular(vec3 normal_MV, vec3 viewDir, vec3 lightDir, vec3 lightSpecular, sampler2D materialSpecular, float materialShininess) {
+vec3 calculateSpecular(vec3 normal_MV, vec3 viewDir, vec3 lightDir, vec3 lightSpecular, sampler2D materialSpecular, float materialShininess, vec2 texPos) {
     // the viewer is always at (0,0,0) in view-space, 
     // in that case the viewDir is (0,0,0) - Position => -Position
     vec3 reflectDir = reflect(-lightDir, normal_MV);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), materialShininess);
-    return (lightSpecular * (spec * vec3(texture(materialSpecular, in_tex))));
+    return (lightSpecular * (spec * vec3(texture(materialSpecular, texPos))));
+}
+
+/**
+ * ******************************************************
+ * TODO DOC THIS
+ * ******************************************************
+**/
+vec3 calculateDirectionalLight(DirectionalLight dl, Material material,
+                               vec3 normal_MV,
+                               vec3 viewDir,
+                               vec2 texPos) {
+    vec3 lved /* light vector direction */ = normalize(-dl.direction);
+
+    /* Ambient */
+    vec3 ambient = dl.ambient * vec3(texture(material.ambient, texPos));
+
+    /* Diffuse */
+    vec3 diffuse = calculateDiffuse(normal_MV, lved , dl.diffuse, material.diffuse1, texPos);
+
+    /* Specular */
+    vec3 specular = calculateSpecular(normal_MV, viewDir, lved , light.specular, material.specular1, material.shininess, texPos);
+
+    return (ambient + diffuse + specular);
+}
+
+/**
+ * ******************************************************
+ * TODO DOC THIS
+ * TODO Figure out the multiple materials per type conundrum
+ * ******************************************************
+**/
+vec3 calculatePointLight(float attenuation, vec2 texPos, 
+                        vec3 normal_MV, 
+                        vec3 viewDir,
+                        Light light,
+                        Material material) {
+    
+    vec3 lved /* light vector direction */ = normalize(light.position - in_fragPos);
+
+    /* Setting material */
+    vec3 ambient = light.ambient * vec3(texture(material.ambient, texPos));
+    ambient *= attenuation;
+
+    /* Diffuse */
+    vec3 diffuse = calculateDiffuse(normal_MV, lved , light.diffuse, material.diffuse1, texPos);
+    diffuse *= attenuation;
+
+    /* Specular */
+    vec3 specular = calculateSpecular(normal_MV, viewDir, lved , light.specular, material.specular1, material.shininess, texPos);
+    specular *= attenuation;
+
+    return (ambient + diffuse + specular);
+}
+
+/**
+ * ******************************************************
+ * TODO DOC THIS
+ * ******************************************************
+**/
+vec3 calculateSpotlight(float attenuation,
+                        vec3 normal_MV,
+                        vec3 viewDir,
+                        vec2 texPos,
+                        Spotlight spotlight,
+                        Material material) {
+    vec3 lved /* light vector direction */ = normalize(spotlight.position - in_fragPos);
+
+    /* Diffuse */
+    vec3 diffuse = calculateDiffuse(normal_MV, lved, spotlight.diffuse, material.diffuse1, texPos);
+    diffuse *= attenuation;
+
+    /* Diffuse */
+    vec3 specular = calculateSpecular(normal_MV, viewDir, lved, spotlight.specular, material.specular1, material.shininess, texPos);
+    specular *= attenuation;
+
+    float theta = dot(lved, normalize(-spotlight.direction));
+    float epsilon = (spotlight.cutOff - spotlight.outerCutOff);
+    float intensity = clamp((theta - spotlight.outerCutOff) / epsilon, 0.0, 1.0);
+
+    diffuse  *= intensity;
+    specular *= intensity;
+
+    return (diffuse + specular);
 }
 
 /**
@@ -84,30 +193,24 @@ vec3 calculateSpecular(vec3 normal_MV, vec3 viewDir, vec3 lightDir, vec3 lightSp
 **/
 void main()
 {
-    //light.position = in_lightPos; // TODO where is the light position? Should it be mvp?
-    float attenuation = calculateSpotLightAttenuation(
-            light.position, light.constant, 
-            light.linear, light.quadratic, in_fragPos);
-
-    /* Setting material */
-    vec3 ambient = light.ambient * vec3(texture(material.ambient, in_tex));
-    //ambient *= attenuation;
-
     /* Normalization */
     vec3 normal_MV = normalize(in_normal);
-    vec3 lightDir = normalize(in_lightPos - in_fragPos);
+    vec3 lightDir = normalize(light.position - in_fragPos);
     vec3 viewDir = normalize(viewPos - in_fragPos);
 
-    /* Diffuse */
-    vec3 diffuseColor = calculateDiffuse(normal_MV, lightDir, light.diffuse, material.diffuse1);
-    //diffuseColor *= attenuation;
+    /* Attenuation */
+    float attenuation = calculateLightAttenuation(light, in_fragPos);
 
-    /* Specular */
-    vec3 specular = calculateSpecular(normal_MV, viewDir, lightDir, light.specular, material.specular1, material.shininess);
-    //specular *= attenuation;
+    /* Point Light */
+    vec3 result = calculatePointLight(attenuation, in_tex,
+                        normal_MV, viewDir,
+                        light, material);
+    /* Spotlight */
+    result += calculateSpotlight(attenuation, normal_MV,
+                   viewDir, in_tex, spotlight, material);
 
-    vec3 result = (ambient + diffuseColor + specular);// * objectColor;
+    /* Directional Light  */
+    result += calculateDirectionalLight(dirLight, material, normal_MV, viewDir, in_tex);
+
     outCol = vec4(result, 1.0);
-    //outCol = mix(texture(ourTexture1, in_tex), texture(ourTexture2, in_tex), 0.2) * ourColor;
-    //outCol = texture(texture_diffuse1, in_tex) * outCol;
 }
