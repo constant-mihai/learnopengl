@@ -79,8 +79,33 @@ float calculateLightAttenuation(Light source, vec3 objPos) {
 
 /**
  * ******************************************************
+ * Light ambient.
+ *
+ * This is just based on the value of the light ambient
+ * (light color) and the material ambient (material color).
+ * ******************************************************
+**/
+vec3 calculateAmbient(vec3 lightAmbient, vec3 materialAmbient, vec2 texPos) {
+    return (lightAmbient * vec3(texture(materialAmbient, texPos)));
+}
+
+/**
+ * ******************************************************
  * Calculate Diffuse
- * TODO DOC THIS
+ * The diffuse lighting is calculated using the normal
+ * and the vector of the light direction in a dot product.
+ *
+ * The normal in this case is not the actual normal due
+ * to abnormalities that can appear on un-uniform scaling.
+ * It's actually the transpose-inversed Normal. From here on
+ * simply shortened as the normal_MV
+ * See more here:
+ * http://www.lighthouse3d.com/tutorials/glsl-tutorial/the-normal-matrix/
+ * 
+ * The light source can also have diffuse properties and
+ * the material as well. As such, after the dot product
+ * we need to multiply by the light source diffuse property
+ * and the material diffuse property.
  * ******************************************************
 **/
 vec3 calculateDiffuse(vec3 normal_MV, vec3 lightDir, vec3 lightDiffuse, sampler2D materialDiffuse, vec2 texPos) {
@@ -92,7 +117,15 @@ vec3 calculateDiffuse(vec3 normal_MV, vec3 lightDir, vec3 lightDiffuse, sampler2
 /**
  * ******************************************************
  * Calculate Specular
- * TODO DOC THIS
+ * Depending on the angle the viewer, the specular will 
+ * differ. This is the shinny part on the object.
+ *
+ * First we need to calculate the reflaction around the
+ * normal_MV.
+ *
+ * We then apply the specular formula. TODO doc this more
+ * We then apply the light and material specular properties
+ *
  * ******************************************************
 **/
 vec3 calculateSpecular(vec3 normal_MV, vec3 viewDir, vec3 lightDir, vec3 lightSpecular, sampler2D materialSpecular, float materialShininess, vec2 texPos) {
@@ -105,7 +138,9 @@ vec3 calculateSpecular(vec3 normal_MV, vec3 viewDir, vec3 lightDir, vec3 lightSp
 
 /**
  * ******************************************************
- * TODO DOC THIS
+ * The directional Lighing.
+ * Has fewer components and is easier to calculate.
+ *
  * ******************************************************
 **/
 vec3 calculateDirectionalLight(DirectionalLight dl, Material material,
