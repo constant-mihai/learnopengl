@@ -65,7 +65,17 @@ uniform Spotlight spotlight;
 /**
  * ******************************************************
  * Calculate light attenuation.
+ *
  * Light fades off with distance;
+ * The formula is presented here:
+ * https://learnopengl.com/Lighting/Light-casters
+ * and here:
+ * http://wiki.ogre3d.org/-Point+Light+Attenuation
+ *
+ * But no mention is made of how they came across it.
+ * Also: no idea, what the values for the constants should
+ * be. They present a light/distance graph, but don't mention what
+ * they measure the distance in...
  *
  * @param light source
  * @param the object position
@@ -73,8 +83,9 @@ uniform Spotlight spotlight;
 **/
 float calculateLightAttenuation(Light source, vec3 objPos) {
     float distance = length(source.position - objPos);
-    return (1.0 / (source.constant + source.linear * distance + 
-                            source.quadratic * (distance * distance)));
+    return (1.0 / 
+            (source.constant + source.linear * distance + 
+             source.quadratic * (distance * distance)));
 }
 
 /**
@@ -92,6 +103,7 @@ vec3 calculateAmbient(vec3 lightAmbient, sampler2D materialAmbient, vec2 texPos)
 /**
  * ******************************************************
  * Calculate Diffuse
+ *
  * The diffuse lighting is calculated using the normal
  * and the vector of the light direction in a dot product.
  *
@@ -117,20 +129,43 @@ vec3 calculateDiffuse(vec3 normal_MV, vec3 lightDir, vec3 lightDiffuse, sampler2
 /**
  * ******************************************************
  * Calculate Specular
+ *
  * Depending on the angle the viewer, the specular will 
  * differ. This is the shinny part on the object.
  *
- * First we need to calculate the reflaction around the
- * normal_MV.
+ * First we need to calculate the reflection around the
+ * normal_MV. It uses the reflect function, but, in
+ * summary, a reflection is a projection followed by an
+ * extension of the the projected vector on the mirrored
+ * side. Which amounts to the following formulas.
  *
- * We then apply the specular formula. TODO doc this more
+ * Algebraic:
+ * 1. u = u_par + u_proj
+ * 2. u'= u_par - u_proj   (u_proj is the extension. same vec, different direction)
+ * Which means the projetion will ultimately be: 
+ * 3. u'=(v^-1)uv
+ * Step 3. is a long jump, see video for more:
+ * https://www.youtube.com/watch?v=ERpcSJzX448
+ *
+ * Geometric:
+ * v.w = |v||w|*cos(2*theta) where theta is angle(v,n)
+ * Unit vectors:
+ * v.w = 2cos(theta)^2 -1; where v.n = cos(theta)
+ * v.w = 2(v.n)^2 -1;   but v.v = 1
+ * v.w = 2(v.n)(v.n) - v.v; divide with v^-1 in front
+ *
+ * w = 2(v.n)n - v
+ *
+ * 
+ * We then multiply by the specular constant. A very large power.
+ * The larger the less light scaters, the more the object shines.
+ * Aptly called in this case: materialShininess
+ *
  * We then apply the light and material specular properties
  *
  * ******************************************************
 **/
 vec3 calculateSpecular(vec3 normal_MV, vec3 viewDir, vec3 lightDir, vec3 lightSpecular, sampler2D materialSpecular, float materialShininess, vec2 texPos) {
-    // the viewer is always at (0,0,0) in view-space, 
-    // in that case the viewDir is (0,0,0) - Position => -Position
     vec3 reflectDir = reflect(-lightDir, normal_MV);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), materialShininess);
     return (lightSpecular * (spec * vec3(texture(materialSpecular, texPos))));
@@ -139,8 +174,10 @@ vec3 calculateSpecular(vec3 normal_MV, vec3 viewDir, vec3 lightDir, vec3 lightSp
 /**
  * ******************************************************
  * The directional Lighing.
- * Has fewer components and is easier to calculate.
  *
+ * Has fewer components and is easier to calculate.
+ * And does not take attenuation into account.
+ * The sun shines bright. Grossly incandescent.
  * ******************************************************
 **/
 vec3 calculateDirectionalLight(DirectionalLight dl, Material material,
@@ -164,8 +201,13 @@ vec3 calculateDirectionalLight(DirectionalLight dl, Material material,
 
 /**
  * ******************************************************
- * TODO DOC THIS
- * TODO Figure out the multiple materials per type conundrum
+ * Point light. 
+ *
+ * Like a light bulb.
+ * Calculate ambient, diffuse and specula, just like 
+ * the directional light, only it does take into account
+ * the attenuation. Sort of like how lightbulbs mention
+ * lumens on the package.
  * ******************************************************
 **/
 vec3 calculatePointLight(float attenuation, vec2 texPos, 
@@ -194,7 +236,9 @@ vec3 calculatePointLight(float attenuation, vec2 texPos,
 
 /**
  * ******************************************************
- * TODO DOC THIS
+ * Spotlight
+ *
+ * It's a point light with cutoff angles.
  * ******************************************************
 **/
 vec3 calculateSpotlight(float attenuation,
@@ -233,6 +277,10 @@ void main()
     /* Normalization */
     vec3 normal_MV = normalize(in_normal);
     vec3 lightDir = normalize(light.position - in_fragPos);
+    // the viewer is always at viewPos = (0,0,0) in view-space, 
+    // in that case 
+    // viewDir = (0,0,0) - Position
+    // viewDir = -Position
     vec3 viewDir = normalize(viewPos - in_fragPos);
 
     /* Attenuation */
