@@ -149,10 +149,10 @@ vec3 calculateDiffuse(vec3 normal_MV, vec3 lightDir, vec3 lightDiffuse, sampler2
  *
  * Geometric:
  * v.w = |v||w|*cos(2*theta) where theta is angle(v,n)
- * Unit vectors:
+ * Since we are working with unit vectors:
  * v.w = 2cos(theta)^2 -1; where v.n = cos(theta)
  * v.w = 2(v.n)^2 -1;   but v.v = 1
- * v.w = 2(v.n)(v.n) - v.v; divide with v^-1 in front
+ * v.w = 2(v.n)(v.n) - v.v; divide with v^-1 
  *
  * w = 2(v.n)n - v
  *
@@ -269,6 +269,19 @@ vec3 calculateSpotlight(float attenuation,
 
 /**
  * ******************************************************
+ * TODO DOC THIS
+ * sources:
+ * https://learnopengl.com/Advanced-OpenGL/Depth-testing
+ * http://www.songho.ca/opengl/gl_projectionmatrix.html
+ * ******************************************************
+**/
+float linearizeDepth(float depth, float near, float far) {
+    float z = depth * 2.0 - 1.0; // back to NDC 
+    return (2.0 * near * far) / (far + near - z * (far - near));    
+}
+
+/**
+ * ******************************************************
  * Main 
  * ******************************************************
 **/
@@ -298,5 +311,10 @@ void main()
     /* Directional Light  */
     result += calculateDirectionalLight(dirLight, material, normal_MV, viewDir, in_tex);
 
-    outCol = vec4(result, 1.0);
+    //outCol = vec4(result, 1.0);
+    float near = 0.1;
+    float far = 100.0;
+    float depth = linearizeDepth(gl_FragCoord.z, near, far);
+    depth /= far; // divide by far for demonstration; TODO what does he mean here, why not just divide in func
+    outCol = vec4(vec3(depth), 1.0);
 }

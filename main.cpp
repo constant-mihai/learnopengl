@@ -203,6 +203,9 @@ int main( void )
      
     /* Depth test */
     glEnable (GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
     /* Max vertex attributes */
     int nrAttributes;
@@ -237,11 +240,17 @@ int main( void )
     Shader fLightSource("/store/Code/cpp/learnopengl/shaders/lightSource.fs", GL_FRAGMENT_SHADER); 
     Program lightSource(vLightSource.getHandler(), fLightSource.getHandler());
 
+    /* Stencil shaders */
+    Shader vStencil("/store/Code/cpp/learnopengl/shaders/stencil.vs", GL_VERTEX_SHADER); 
+    Shader fStencil("/store/Code/cpp/learnopengl/shaders/stencil.fs", GL_FRAGMENT_SHADER); 
+    Program stencil(vStencil.getHandler(), fStencil.getHandler());
+
     /* Camera */
     Camera camera(glm::vec3(0, 10, 10.0f), 70.0f, ASPECT_RATIO, 0.01f, 1000.0f);
 
     /* Transform */
     Transform model(glm::vec3(0, 0, -1.0f), glm::vec3(1, 1, 1), glm::vec3(0.0f, 0, 0));
+    Transform scaledModel(glm::vec3(0, 0, -1.0f), glm::vec3(1.1, 1.1, 1.1), glm::vec3(0.0f, 0, 0));
 
     UserPointer up = { &camera, -90.0f, 0.0f, 800.0f / 2.0, 600.0f / 2.0f,  70.0f, true};
     glfwSetInputMode(uptrWindow.get()->getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -265,6 +274,9 @@ int main( void )
     /* While window is open */
     while(!uptrWindow.get()->shouldClose())
     {
+        /* Clear */
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
         /* Time */
         time = glfwGetTime();
         deltaTime = time - lastFrame;
@@ -279,6 +291,11 @@ int main( void )
         mvp = camera.getProjection() * mov;
         vp = camera.getViewProjection();
 
+        /* Stencil Ops */
+        /* 1st render pass, draw as normal, writing to the stencil buffer */
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilMask(0xFF);
+
         /* Run object model program */
         program.use();
         program.setMat4f("model", &(model.getModelRef()[0][0]));
@@ -286,6 +303,12 @@ int main( void )
         program.setMat4f("mov", &mov[0][0]);
         program.setMat4f("mvp", &mvp[0][0]);
         program.setMat4f("vp", &vp[0][0]);
+        /* Transform the Normal vectors 
+         * Applying the Model-View to normals is not as straight-forward.
+         * Since Un-uniform sclaing would result in morphed normals */
+        glm::mat4 inversedModel = glm::inverse(model.getModelRef());
+        glm::mat4 transposedInversedModel  = glm::transpose(inversedModel);
+        program.setMat4f("transposedInversedModel", &transposedInversedModel[0][0]);
         program.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
             camX = sin(time) * radius;
             camZ = cos(time) * radius;
@@ -316,22 +339,31 @@ int main( void )
         program.setFloat("spotlight.linear", 0.045f);
         program.setFloat("spotlight.quadratic", 0.0075f);
 
-
         program.setVec3("viewPos", glm::vec3(0,0,0)); /* Calculate the specular light in view-space */
         program.setFloat("material.shininess", 32.0f);
 
-        /* Transform the Normal vectors 
-         * Applying the Model-View to normals is not as straight-forward.
-         * Since Un-uniform sclaing would result in morphed normals */
-        glm::mat4 inversedModel = glm::inverse(model.getModelRef());
-        glm::mat4 transposedInversedModel  = glm::transpose(inversedModel);
-        program.setMat4f("transposedInversedModel", &transposedInversedModel[0][0]);
-
-        /* Clear */
-        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
         /* Draw models */
         nanosuit->draw(program);
+
+        // 2nd. render pass: now draw slightly scaled versions of the objects, this time disabling stencil writing.
+        // Because the stencil buffer is now filled with several 1s. The parts of the buffer that are 1 are not drawn, thus only drawing 
+        // the objects' size differences, making it look like borders.
+        // -----------------------------------------------------------------------------------------------------------------------------
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+        glDisable(GL_DEPTH_TEST);
+
+        stencil.use();
+        stencil.setMat4f("model", &(scaledModel.getModelRef()[0][0]));
+        stencil.setMat4f("vp", &vp[0][0]);
+        inversedModel = glm::inverse(scaledModel.getModelRef());
+        transposedInversedModel  = glm::transpose(inversedModel);
+        stencil.setMat4f("transposedInversedModel", &transposedInversedModel[0][0]);
+        nanosuit->draw(stencil);
+
+        /* Reset stencil and depth test */
+        glStencilMask(0xFF);
+		glEnable(GL_DEPTH_TEST);
         
         /* Use the lighting */
         lightSource.use();
