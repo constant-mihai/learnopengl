@@ -1,20 +1,19 @@
-# Ignore everything
-*
+# Vim
+*.swp
+*.swo
+*.sess
 
-# Unignore directories
-!*/
+# Ctags
+tags
 
-# Unignore files with [ch] extensions
-!*.[ChH]
-!*.cpp
-!*.hpp
-!*.CPP
-!*.vs
-!*.fs
+# logs
+*.log
+log.*
 
-# Unignore text files
-!*.txt
-!*.rar
+# object files
+*.o
 
-# Unignore Makefiles
-!Makefile
+# depenency files
+*.d
+
+#
