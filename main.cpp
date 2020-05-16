@@ -233,18 +233,18 @@ int main( void )
     Model *nanosuit = loadModel();
 
     /* Compile shaders and link program */
-    Shader vShader("/store/Code/cpp/learnopengl/shaders/SimpleVertexShader.vs", GL_VERTEX_SHADER); 
-    Shader fShader("/store/Code/cpp/learnopengl/shaders/SimpleFragmentShader.fs", GL_FRAGMENT_SHADER);
+    Shader vShader("shaders/SimpleVertexShader.vs", GL_VERTEX_SHADER); 
+    Shader fShader("shaders/SimpleFragmentShader.fs", GL_FRAGMENT_SHADER);
     Program program(vShader.getHandler(), fShader.getHandler());
 
     /* Light Source program */
-    Shader vLightSource("/store/Code/cpp/learnopengl/shaders/lightSource.vs", GL_VERTEX_SHADER); 
-    Shader fLightSource("/store/Code/cpp/learnopengl/shaders/lightSource.fs", GL_FRAGMENT_SHADER); 
+    Shader vLightSource("shaders/lightSource.vs", GL_VERTEX_SHADER); 
+    Shader fLightSource("shaders/lightSource.fs", GL_FRAGMENT_SHADER); 
     Program lightSource(vLightSource.getHandler(), fLightSource.getHandler());
 
     /* Stencil shaders */
-    Shader vStencil("/store/Code/cpp/learnopengl/shaders/stencil.vs", GL_VERTEX_SHADER); 
-    Shader fStencil("/store/Code/cpp/learnopengl/shaders/stencil.fs", GL_FRAGMENT_SHADER); 
+    Shader vStencil("shaders/stencil.vs", GL_VERTEX_SHADER); 
+    Shader fStencil("shaders/stencil.fs", GL_FRAGMENT_SHADER); 
     Program stencil(vStencil.getHandler(), fStencil.getHandler());
 
     /* Camera */
@@ -264,8 +264,8 @@ int main( void )
     glm::mat4 vp = camera.getViewProjection();
 
     /* Load texture */
-    Texture crate("/store/Code/cpp/learnopengl/img/textures/container.png", GL_RGB, "texture_diffuse1");
-    //Texture smile("/store/Code/cpp/learnopengl/img/textures/awesomeface.png", GL_RGBA, 1);
+    Texture crate("img/textures/container.png", GL_RGB, "texture_diffuse1");
+    //Texture smile("img/textures/awesomeface.png", GL_RGBA, 1);
 
     double time = 0, deltaTime = 0, lastFrame = 0;//, rotateTime = glfwGetTime();
     glm::mat4 res(1.0f);

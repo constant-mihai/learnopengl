@@ -319,9 +319,9 @@ class TinyObjModel {
          * ******************************************************
         **/
         void loadModel() {
-            //std::string MODEL_PATH = "/store/Code/cpp/learnopengl/models/star_cruiser/scene.gltf";
-            std::string MODEL_PATH ="/store/Code/cpp/learnopengl/models/nanosuit.obj"; 
-            std::string MATERIAL_BASE_DIR ="/store/Code/cpp/learnopengl/models/"; 
+            //std::string MODEL_PATH = "models/star_cruiser/scene.gltf";
+            std::string MODEL_PATH ="models/nanosuit.obj"; 
+            std::string MATERIAL_BASE_DIR ="models/"; 
 			if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, 
                         MODEL_PATH.c_str(), MATERIAL_BASE_DIR.c_str())) {
                 LOG(L_CRIT, "Error Loading model: %s", MODEL_PATH.c_str());

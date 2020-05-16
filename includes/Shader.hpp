@@ -11,7 +11,7 @@
 #include <sstream>
 #include <iostream>
 
-const char * SHADER_LOG = "/store/Code/cpp/learnopengl/shaders/log.shaders";
+const char * SHADER_LOG = "shaders/log.shaders";
 /**
  * ******************************************************
  * @brief Shader class
