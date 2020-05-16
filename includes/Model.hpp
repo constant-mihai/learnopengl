@@ -45,7 +45,7 @@ class Model
          * TODO DOC THIS
          * ******************************************************
         **/
-        Model(char *path, uint32_t drawType)
+        Model(const char *path, uint32_t drawType)
         {
             loadModel(path, drawType);
         }

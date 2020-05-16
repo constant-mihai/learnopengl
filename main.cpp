@@ -19,6 +19,7 @@
 #include <mat4x4.hpp>
 #include <trigonometric.hpp>
 #include <gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
 #include <gtc/quaternion.hpp>
 #include <gtx/quaternion.hpp>
 
@@ -178,7 +179,8 @@ void createGrid(VertexArray& VAO_grid) {
  * ******************************************************
 **/
 Model * loadModel() {
-    Model * model = new Model("/store/Code/cpp/learnopengl/models/nanosuit.obj", GL_STATIC_DRAW);
+    const char * obj_path =  "/store/code/cpp/learnopengl/models/nanosuit.obj";
+    Model * model = new Model(obj_path, GL_STATIC_DRAW);
 
     return model;
 }
